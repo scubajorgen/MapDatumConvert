@@ -79,6 +79,7 @@ public class MapDatumConvert
         public double tz;       // origin transfer
     }
     
+    // Settings
     public static Ellipsoid ellipsoidBessel1841 =new Ellipsoid(6377397.155, 0.081696831222);
     public static Ellipsoid ellipsoidWgs84      =new Ellipsoid(6378137.0, 0.0818191908426215);
     double phi0Rd               =52.156160556;                  // latitude of origin
@@ -95,9 +96,10 @@ public class MapDatumConvert
     double k                    =0.9999079;                     // scaling
     double x0                   =155000;                        // false northing
     double y0                   =463000;                        // false easting
-    double N                    =-0.113;                        // height correction
+    double N                    =-0.113;                        // height correction NAP - Bessel1841
     
     /**
+     * Step 1a. 
      * Converts the RD coordinates to lat lon height with respect to the 
      * Bessel1841 Ellipsoid.
      * @param rd The RD coordinate
@@ -157,6 +159,7 @@ public class MapDatumConvert
     }
     
     /**
+     * Step 1b. 
      * Converts a lat/lon/height coordinate with respect to the Bessel1841
      * ellipsoid to a Rijksdriehoeksmeting coordinate.
      * @param latlon The input coordinate
@@ -201,6 +204,7 @@ public class MapDatumConvert
     }
     
     /**
+     * Step 2a, 4b.
      * Convers lat/lon/height to Carthesian coordinate assuming given ellipsoid
      * @param latlon The coordinate to convert
      * @param el The ellipsoid to use
@@ -226,6 +230,13 @@ public class MapDatumConvert
         return coordinate;
     }
     
+    /**
+     * Executes the datum transform of carthesian coordinates. It is a 3D
+     * similarity transform consisting of ratation, translation and scaling.
+     * @param in Input coordinate
+     * @param p  Transform parameters
+     * @return The coordinate in against the new coordinate axes
+     */
     public CarthesianCoordinate datumTransform(CarthesianCoordinate in, DatumTransformParameters p)
     {
         CarthesianCoordinate out;
@@ -240,9 +251,10 @@ public class MapDatumConvert
     }
     
     /**
-     * 
-     * @param rd
-     * @return 
+     * Step 3a.
+     * Datum transfer from RD to WGS84
+     * @param rd RD coordinate [X, Y, Z]
+     * @return WGS84 coordinate [X, Y, Z]
      */
     public CarthesianCoordinate datumTransformRdToWgs84(CarthesianCoordinate rd)
     {
@@ -265,9 +277,10 @@ public class MapDatumConvert
     }
     
     /**
-     * 
-     * @param wgs84
-     * @return 
+     * Step 3b
+     * Datum transfer from WGS84 to RD
+     * @param wgs84 WGS84 coordinate [X, Y, Z]
+     * @return RD coordinate [X, Y, Z]
      */
     public CarthesianCoordinate datumTransformWgs84ToRd(CarthesianCoordinate wgs84)
     {
@@ -289,6 +302,13 @@ public class MapDatumConvert
         return datumTransform(wgs84, p);
     }
 
+    /**
+     * Step 2b, 4a.
+     * Conversion from Carthesian coordinate to lat, lon, height
+     * @param in Input coordinate [X,Y,Z]
+     * @param el Ellipsoid to use
+     * @return The lat/lon/height coordinate with respect to the ellipsoid
+     */
     public LatLonCoordinate carthesianToLatLon(CarthesianCoordinate in, Ellipsoid el)
     {
         LatLonCoordinate    latlon;
@@ -321,7 +341,7 @@ public class MapDatumConvert
      * @param rd The RD coordinate
      * @return The WGS84 coordinate
      */
-    public LatLonCoordinate RdToWgs(RdCoordinate rd)
+    public LatLonCoordinate rdToWgs84(RdCoordinate rd)
     {
         LatLonCoordinate        rdLatLon;
         CarthesianCoordinate    rdCarthesian;

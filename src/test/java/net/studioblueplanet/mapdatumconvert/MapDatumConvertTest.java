@@ -220,7 +220,7 @@ public class MapDatumConvertTest
         rd.y=444659.972;
         rd.h=30.809;
         MapDatumConvert instance    = new MapDatumConvert();
-        LatLonCoordinate result     = instance.RdToWgs(rd);
+        LatLonCoordinate result     = instance.rdToWgs84(rd);
         assertEquals(51.98608734    , result.phi    , 0.0000001);
         assertEquals( 4.387764732   , result.lambda , 0.0000001);
         assertEquals(74.312         , result.h      , 0.001);
@@ -232,7 +232,7 @@ public class MapDatumConvertTest
         rd.x=155000.0;
         rd.y=463000.0;
         rd.h=0.0;
-        result = instance.RdToWgs(rd);
+        result = instance.rdToWgs84(rd);
         assertEquals(52.1551722  , result.phi    , 0.0000001);
         assertEquals( 5.3872035  , result.lambda , 0.0000001);
         assertEquals(43.2345     , result.h      , 0.001);        
@@ -282,7 +282,7 @@ public class MapDatumConvertTest
         wgs.h                       =74.312;
         MapDatumConvert instance    = new MapDatumConvert();
         RdCoordinate rd         = instance.wgs84ToRd(wgs);
-        LatLonCoordinate result     = instance.RdToWgs(rd);
+        LatLonCoordinate result     = instance.rdToWgs84(rd);
         assertEquals( wgs.phi   , result.phi    , 0.0000001);
         assertEquals(wgs.lambda , result.lambda , 0.0000001);
         assertEquals(wgs.h      , result.h      , 0.001);    
