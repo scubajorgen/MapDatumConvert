@@ -56,7 +56,7 @@ public class StereoGraphicProjectionTest
         rd.northing                         =444659.972;
         rd.h                                =30.809;
         
-        StereoGraphicProjection instance    = new StereoGraphicProjection();
+        StereoGraphicProjection instance    = StereoGraphicProjection.RIJKSDRIEHOEKSMETING;
         LatLonCoordinate result             = instance.mapDatumToLatLon(rd);
         assertEquals(4.388054251, result.lambda , 0.0000001);
         assertEquals(51.98705383, result.phi    , 0.0000001);
@@ -78,7 +78,7 @@ public class StereoGraphicProjectionTest
         rdLatLon.phi                    =51.987053833;
         rdLatLon.lambda                 =4.388054251;
         rdLatLon.h                      =30.696;
-        StereoGraphicProjection instance= new StereoGraphicProjection();
+        StereoGraphicProjection instance= StereoGraphicProjection.RIJKSDRIEHOEKSMETING;
         DatumCoordinate result          = instance.latLonToMapDatum(rdLatLon);
         assertEquals(86346.784  , result.easting , 0.001);
         assertEquals(444659.972 , result.northing , 0.001);

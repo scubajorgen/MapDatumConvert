@@ -198,7 +198,7 @@ public class MapDatumConvert
         LatLonCoordinate        wgs84LatLon;
         StereoGraphicProjection p;
         
-        p=new StereoGraphicProjection();
+        p               =StereoGraphicProjection.RIJKSDRIEHOEKSMETING;
         rdLatLon        =p.mapDatumToLatLon(rd);
         rdCarthesian    =this.latLonToCarthesian(rdLatLon, ellipsoidBessel1841);
         wgs84Carthesian =this.datumTransformRdToWgs84(rdCarthesian);
@@ -216,7 +216,7 @@ public class MapDatumConvert
         LatLonCoordinate        wgs84LatLon;
         StereoGraphicProjection p;
         
-        p               =new StereoGraphicProjection();
+        p               =StereoGraphicProjection.RIJKSDRIEHOEKSMETING;
         wgs84Carthesian =latLonToCarthesian(wgs, ellipsoidWgs84);
         rdCarthesian    =datumTransformWgs84ToRd(wgs84Carthesian);
         rdLatLon        =carthesianToLatLon(rdCarthesian, ellipsoidBessel1841);

@@ -11,8 +11,8 @@ package net.studioblueplanet.mapdatumconvert;
  */
 public class Ellipsoid
 {
-    public double a;    // radius in m
-    public double b;    // radius in 
+    public double a;    // long radius in m
+    public double b;    // short radius in m
     public double f;    // flattening
     public double e;    // excentricity
     public double e2;   // excentricity squared
@@ -20,7 +20,7 @@ public class Ellipsoid
         
     public final static Ellipsoid ELLIPSOID_AIRY        =new Ellipsoid(6377563.396, 6356256.910, null);
     public final static Ellipsoid ELLIPSOID_WGS84       =new Ellipsoid(6378137.000, 6356752.314, null);        
-    public final static Ellipsoid ELLIPSOID_BESSEL1841  =new Ellipsoid(6377397.155, null, 1.0/ 299.15281285);        
+    public final static Ellipsoid ELLIPSOID_BESSEL1841  =new Ellipsoid(6377397.155, null       , 1.0/ 299.15281285);        
         
     /**
      * Constructor. The radius a must be specified. At least one of b or f 
@@ -36,7 +36,7 @@ public class Ellipsoid
         {
             this.b  =b;
             this.f  =(a-b)/a;
-            e2      =2*this.f-this.f*this.f;
+            e2      =2.0*this.f-this.f*this.f;
             e       =Math.sqrt(e2);
             n       =(a-b)/(a+b);
         }
@@ -44,7 +44,7 @@ public class Ellipsoid
         {
             this.b  =a-a*f;
             this.f  =f;
-            e2      =2*f-f*f;
+            e2      =2.0*f-f*f;
             e       =Math.sqrt(e2);
             n       =(a-this.b)/(a+this.b);
         }
