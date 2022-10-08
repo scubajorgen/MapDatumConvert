@@ -17,37 +17,6 @@ package net.studioblueplanet.mapdatumconvert;
 public class MapDatumConvert
 {
     /**
-     * Represents a Rijksdriehoeksmeting coordinate. x = easting, y=northing, 
-     * h=height.
-     */
-    public static class RdCoordinate
-    {
-        public double x;        // easting in m
-        public double y;        // northing in m
-        public double h;        // height in m 
-    };
-    
-    /**
-     * Represents a carthesian [X, Y, Z] coordinate
-     */
-    public static class CarthesianCoordinate
-    {
-        public double X;        // X coordinate in m
-        public double Y;        // Y coordinate in m
-        public double Z;        // Z coordinate in m
-    };
-    
-    /**
-     * Represents a latitude/longitude coordinate with height
-     */
-    public static class LatLonCoordinate
-    {
-        public double phi;      // latitude in degrees
-        public double lambda;   // longitude in degrees
-        public double h;        // height in m
-    }
-    
-    /**
      * Represents the parameters for an ellipsoid
      */
     public static class Ellipsoid
@@ -82,127 +51,7 @@ public class MapDatumConvert
     // Settings
     public static Ellipsoid ellipsoidBessel1841 =new Ellipsoid(6377397.155, 0.081696831222);
     public static Ellipsoid ellipsoidWgs84      =new Ellipsoid(6378137.0, 0.0818191908426215);
-    double phi0Rd               =52.156160556;                  // latitude of origin
-    double phi0RdRad            =phi0Rd/360.0*2.0*Math.PI;      
-    double lambda0Rd            =5.387638889;                   // longitude of origin
-    double lambda0RdRad         =lambda0Rd/360.0*2.0*Math.PI;
-    double B0                   =52.121097249;
-    double B0Rad                =B0/360.0*2.0*Math.PI;
-    double L0                   =5.387638889;
-    double L0Rad                =L0/360.0*2.0*Math.PI;
-    double n                    =1.00047585668;
-    double m                    =0.003773953832;
-    double R                    =6382644.571;                   // Radius of sphere in m
-    double k                    =0.9999079;                     // scaling
-    double x0                   =155000;                        // false northing
-    double y0                   =463000;                        // false easting
-    double N                    =-0.113;                        // height correction NAP - Bessel1841
-    
-    /**
-     * Step 1a. 
-     * Converts the RD coordinates to lat lon height with respect to the 
-     * Bessel1841 Ellipsoid.
-     * @param rd The RD coordinate
-     * @return The lat lon height coordinate.
-     */
-    public LatLonCoordinate rdToLatLon(RdCoordinate rd)
-    {
-        LatLonCoordinate    latlon;
-        double              dx;
-        double              dy;
-        double              sinAlpha;
-        double              cosAlpha;
-        double              r;
-        double              PsiRad;
-        double              BRad;
-        double              DeltaL;
-        double              w;
-        double              q;
-        double              dq;
-        double              phiRad;
-        
-        latlon=new LatLonCoordinate();
-        
-        dx              =rd.x-x0;
-        dy              =rd.y-y0;
-        r               =Math.sqrt(Math.pow(dx, 2)+Math.pow(dy, 2));
-        
-        if (r>0.0)
-        {
-            sinAlpha        =dx/r;
-            cosAlpha        =dy/r;
-            PsiRad          =2*Math.atan(r/(2*R*k));
-            BRad            =Math.asin(cosAlpha*Math.cos(B0Rad)*Math.sin(PsiRad)+Math.sin(B0Rad)*Math.cos(PsiRad));
-            DeltaL          =Math.asin(sinAlpha*Math.sin(PsiRad)/Math.cos(BRad));
-            latlon.lambda   =(DeltaL/n)*360.0/2/Math.PI+lambda0Rd;
 
-            w               =Math.log(Math.tan(BRad/2+Math.PI/4.0));
-            q               =(w-m)/n;
-            dq              =0.0;
-            phiRad          =0.0;
-            for(int i=0;i<4;i++)
-            {
-                phiRad      =2.0*Math.atan(Math.exp(q+dq))-Math.PI/2;
-                dq          =0.5*ellipsoidBessel1841.e*Math.log((1+ellipsoidBessel1841.e*Math.sin(phiRad))/(1-ellipsoidBessel1841.e*Math.sin(phiRad)));
-            }
-            latlon.phi      =phiRad/2.0/Math.PI*360.0;
-        }
-        else
-        {
-            latlon.phi      =phi0Rd;
-            latlon.lambda   =lambda0Rd;
-        }
-
-        latlon.h        =rd.h+N;
-
-        return latlon;
-    }
-    
-    /**
-     * Step 1b. 
-     * Converts a lat/lon/height coordinate with respect to the Bessel1841
-     * ellipsoid to a Rijksdriehoeksmeting coordinate.
-     * @param latlon The input coordinate
-     * @return The RD coordinate
-     */
-    public RdCoordinate latLonToRd(LatLonCoordinate latlon)
-    {
-        RdCoordinate    rd;
-        double          lambdaRad;
-        double          phiRad;
-        double          q;
-        double          dq;
-        double          w;
-        double          B;
-        double          dL;
-        double          PsiRad;
-        double          sinAlpha;
-        double          cosAlpha;
-        double          r;
-        
-        rd          =new RdCoordinate();
-        
-        phiRad      =2.0*Math.PI*latlon.phi/360.0;
-        lambdaRad   =2.0*Math.PI*latlon.lambda/360.0;
-
-        q           =Math.log(Math.tan(phiRad/2.0+Math.PI/4.0));
-        dq          =0.5*ellipsoidBessel1841.e*Math.log((1+ellipsoidBessel1841.e*Math.sin(phiRad))/(1-ellipsoidBessel1841.e*Math.sin(phiRad)));
-        q           =q-dq;
-        w           =n*q+m;
-        B           =2*Math.atan(Math.exp(w))-Math.PI/2;
-        dL          =n*(lambdaRad-lambda0RdRad);
-        PsiRad      =Math.asin(Math.sqrt(Math.pow(Math.sin(0.5*(B-B0Rad)),2.0)+Math.pow(Math.sin(0.5*dL), 2.0)*Math.cos(B)*Math.cos(B0Rad)))*2.0;
-        sinAlpha    =Math.sin(dL)*Math.cos(B)/Math.sin(PsiRad);
-        cosAlpha    =(Math.sin(B)-Math.sin(B0Rad)*Math.cos(PsiRad))/(Math.cos(B0Rad)*Math.sin(PsiRad));
-        r           =2*k*R*Math.tan(PsiRad/2.0);
-        
-        rd.x        =r*sinAlpha+x0;
-        rd.y        =r*cosAlpha+y0;
-        rd.h        =latlon.h-N;
-        
-        return rd;
-    }
-    
     /**
      * Step 2a, 4b.
      * Convers lat/lon/height to Carthesian coordinate assuming given ellipsoid
@@ -341,14 +190,16 @@ public class MapDatumConvert
      * @param rd The RD coordinate
      * @return The WGS84 coordinate
      */
-    public LatLonCoordinate rdToWgs84(RdCoordinate rd)
+    public LatLonCoordinate rdToWgs84(DatumCoordinate rd)
     {
         LatLonCoordinate        rdLatLon;
         CarthesianCoordinate    rdCarthesian;
         CarthesianCoordinate    wgs84Carthesian;
         LatLonCoordinate        wgs84LatLon;
+        StereoGraphicProjection p;
         
-        rdLatLon        =this.rdToLatLon(rd);
+        p=new StereoGraphicProjection();
+        rdLatLon        =p.mapDatumToLatLon(rd);
         rdCarthesian    =this.latLonToCarthesian(rdLatLon, ellipsoidBessel1841);
         wgs84Carthesian =this.datumTransformRdToWgs84(rdCarthesian);
         wgs84LatLon     =this.carthesianToLatLon(wgs84Carthesian, ellipsoidWgs84);
@@ -356,18 +207,20 @@ public class MapDatumConvert
         return wgs84LatLon;
     }
     
-    public RdCoordinate wgs84ToRd(LatLonCoordinate wgs)
+    public DatumCoordinate wgs84ToRd(LatLonCoordinate wgs)
     {
-        RdCoordinate rd;
+        DatumCoordinate rd;
         LatLonCoordinate        rdLatLon;
         CarthesianCoordinate    rdCarthesian;
         CarthesianCoordinate    wgs84Carthesian;
         LatLonCoordinate        wgs84LatLon;
+        StereoGraphicProjection p;
         
+        p               =new StereoGraphicProjection();
         wgs84Carthesian =latLonToCarthesian(wgs, ellipsoidWgs84);
         rdCarthesian    =datumTransformWgs84ToRd(wgs84Carthesian);
         rdLatLon        =carthesianToLatLon(rdCarthesian, ellipsoidBessel1841);
-        rd              =latLonToRd(rdLatLon);
+        rd              =p.latLonToMapDatum(rdLatLon);
         
         return rd;
     }
