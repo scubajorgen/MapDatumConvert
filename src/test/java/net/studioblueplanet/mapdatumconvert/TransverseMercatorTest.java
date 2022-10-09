@@ -122,5 +122,67 @@ public class TransverseMercatorTest
         assertEquals(69740.50, tm.northing, 0.01);
         assertEquals(577274.99, tm.easting, 0.01);    
     }
+
     
+    @Test
+    public void testUtm31N()
+    {
+        System.out.println("____________________________________________________");
+        System.out.println("UTM 31N");
+        // OLV Amersfoort, UTM coordinates from geocachingtoolbox.com
+        LatLonCoordinate rdLatLon       = new LatLonCoordinate();
+        rdLatLon.phi                    =52.15615833;
+        rdLatLon.lambda                 =5.387633333;
+        rdLatLon.h                      =0.0;
+        TransverseMercatorProjection instance= TransverseMercatorProjection.UTM31N;
+        DatumCoordinate result          = instance.latLonToMapDatum(rdLatLon);
+        assertEquals( 663330  , result.easting , 1);
+        assertEquals(5781095  , result.northing, 1);
+        System.out.println(String.format("[%8.6f, %8.6f] to [31U %8.3f, %8.3f]",
+                           rdLatLon.phi, rdLatLon.lambda,
+                           result.easting, result.northing));        
+    }    
+
+    /**
+     * This method calculates the northing/easting of the Martini Toren
+     * in Groningen according to two projections: 1. the 'Rijksdriehoeksmeting' 
+     * which is Stereographic and uses Bessel1841 and 2. The 
+     * Transverse mercator projection, with OLV Amersfoort as center and
+     * an identical scaling and false easting/northing as the RD.
+     * It then calculates the difference in coordinates of the 
+     * Transverse Mercator with respect to the RD.
+     */
+    @Test
+    public void testCompareTransverseMercatorToRDProjection()
+    {
+        System.out.println("____________________________________________________");
+        System.out.println("Comapre Transverse Mercator to Stereographic northing/easting");
+        
+        // Martinitoren Groningen, WGS84, Transverse mercator
+        LatLonCoordinate rdLatLon       = new LatLonCoordinate();
+        rdLatLon.phi                    =53.21936;
+        rdLatLon.lambda                 =6.568298333;
+        rdLatLon.h                      =0.0;
+        TransverseMercatorProjection instance= TransverseMercatorProjection.OZI_WGS84_TM;
+        DatumCoordinate result          = instance.latLonToMapDatum(rdLatLon);
+        assertEquals( 233884.4  , result.easting , 0.1);
+        assertEquals( 582064.0  , result.northing, 0.1);
+        System.out.println(String.format("[%8.6f, %8.6f] to [%8.3f, %8.3f]",
+                           rdLatLon.phi, rdLatLon.lambda,
+                           result.easting, result.northing));      
+        
+        // Martinitoren Groningen, Bessel1841, Stereographic
+        MapDatumConvert mdc=new MapDatumConvert();
+        DatumCoordinate dc=mdc.wgs84ToRd(rdLatLon);
+        assertEquals( 233889.9  , dc.easting , 0.1);
+        assertEquals( 582062.9  , dc.northing, 0.1);        
+        System.out.println(String.format("[%8.6f, %8.6f] to [%8.3f, %8.3f]",
+                           rdLatLon.phi, rdLatLon.lambda,
+                           dc.easting  , dc.northing));   
+        
+        System.out.println(String.format("Difference: %3.1f, %3.1f m", result.easting-dc.easting, 
+                                                                       result.northing-dc.northing));
+        
+    }    
+
 }

@@ -16,7 +16,7 @@ package net.studioblueplanet.mapdatumconvert;
  * [2] The stereographic double projection by Thomson, Mepham and Steeves 1998 
  * @author jorgen
  */
-public class StereoGraphicProjection implements MapProjection
+public class StereographicProjection implements MapProjection
 {
     // projection settings
     private final Ellipsoid el;
@@ -35,8 +35,8 @@ public class StereoGraphicProjection implements MapProjection
     private final double    N;                   // height correction    
 
     
-    public static final StereoGraphicProjection RIJKSDRIEHOEKSMETING=
-            new StereoGraphicProjection(Ellipsoid.ELLIPSOID_BESSEL1841, 
+    public static final StereographicProjection RIJKSDRIEHOEKSMETING=
+            new StereographicProjection(Ellipsoid.ELLIPSOID_BESSEL1841, 
                                         52.156160556, 5.387638889, 
                                         0.9999079, 
                                         6382644.571, 
@@ -54,7 +54,7 @@ public class StereoGraphicProjection implements MapProjection
      * @param northing Northing to add for false northing in m
      * @param N Constant to add for height.
      */
-    public StereoGraphicProjection(Ellipsoid el, double phi0, double lambda0, double scale, double R, double easting, double northing, double N)
+    public StereographicProjection(Ellipsoid el, double phi0, double lambda0, double scale, double R, double easting, double northing, double N)
     {
         double Psi;
         double m1;

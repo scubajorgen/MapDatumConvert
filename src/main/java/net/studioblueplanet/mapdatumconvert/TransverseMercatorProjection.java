@@ -22,9 +22,14 @@ public class TransverseMercatorProjection implements MapProjection
     private final double       X0;         // Norhting constant in m
     private final double       Y0;         // Easting constant in m
 
-    public  final static TransverseMercatorProjection BRITISH_NATIONAL_GRID=
-            new TransverseMercatorProjection(Ellipsoid.ELLIPSOID_AIRY, 0.9996012717, 49.0, -2.0, -100000, 400000);
+    public  final static TransverseMercatorProjection UTM31N=
+            new TransverseMercatorProjection(Ellipsoid.ELLIPSOID_WGS84, 0.9996     , 0.0, 3.0, 0, 500000.0);
 
+    public  final static TransverseMercatorProjection BRITISH_NATIONAL_GRID=
+            new TransverseMercatorProjection(Ellipsoid.ELLIPSOID_AIRY, 0.9996012717, 49.0, -2.0, -100000.0, 400000.0);
+
+    public  final static TransverseMercatorProjection OZI_WGS84_TM=
+            new TransverseMercatorProjection(Ellipsoid.ELLIPSOID_WGS84, 0.9999079  ,52.15516833, 5.387198333, 463000.0, 155000.0);
     
     /**
      * Constructor. Parametrizes the projection.
