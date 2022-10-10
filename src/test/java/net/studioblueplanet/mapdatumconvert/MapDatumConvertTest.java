@@ -134,7 +134,7 @@ public class MapDatumConvertTest
     
     
     /**
-     * Test of RdToWgs method, of class MapDatumConvert.
+     * Test of rdToWgs method, of class MapDatumConvert.
      */
     @Test
     public void testRdToWgs84()
@@ -166,6 +166,18 @@ public class MapDatumConvertTest
                            rd.easting, rd.northing, rd.h,
                            result.phi, result.lambda, result.h));
     }
+
+    /**
+     * Test of rdLatLonToWgs method, of class MapDatumConvert.
+     */
+    @Test
+    @org.junit.Ignore
+    public void testRdLatLonToWgs84()
+    {
+        System.out.println("____________________________________________________");
+        System.out.println("RdLatLonToWgs");
+    }
+
     
     @Test
     public void testWgs84ToRd()
@@ -196,6 +208,18 @@ public class MapDatumConvertTest
                            wgs.phi, wgs.lambda, wgs.h,
                            result.easting, result.northing, result.h));
     }
+    
+    /**
+     * Test of wgsToRdLatLon method, of class MapDatumConvert.
+     */
+    @Test
+    @org.junit.Ignore
+    public void testWgs84ToRdLatLon()
+    {
+        System.out.println("____________________________________________________");
+        System.out.println("wgs84ToRdLatLon");
+    }
+    
     
     @Test
     public void testRoundTrip()

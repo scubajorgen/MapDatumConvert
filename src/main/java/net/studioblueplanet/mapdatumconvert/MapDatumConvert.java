@@ -165,6 +165,29 @@ public class MapDatumConvert
         
         return latlon;
     }
+
+    /**
+     * This method converst RD lat/lon coordinates to WGS84 lat/lon coordinates
+     * @param rd The RD coordinate as latitude,longitude
+     * @return The WGS84 coordinate
+     */
+    public LatLonCoordinate rdLatLonToWgs84(LatLonCoordinate rd)
+    {
+        LatLonCoordinate        rdLatLon;
+        CarthesianCoordinate    rdCarthesian;
+        CarthesianCoordinate    wgs84Carthesian;
+        LatLonCoordinate        wgs84LatLon;
+        StereographicProjection p;
+        
+        p               =StereographicProjection.RIJKSDRIEHOEKSMETING;
+        rdCarthesian    =this.latLonToCarthesian(rd, Ellipsoid.ELLIPSOID_BESSEL1841);
+        wgs84Carthesian =this.datumTransformRdToWgs84(rdCarthesian);
+        wgs84LatLon     =this.carthesianToLatLon(wgs84Carthesian, Ellipsoid.ELLIPSOID_WGS84);
+        
+        return wgs84LatLon;
+    }
+    
+
     
     /**
      * This method converst RD coordinates to WGS84 coordinates
@@ -187,7 +210,36 @@ public class MapDatumConvert
         
         return wgs84LatLon;
     }
-    
+
+    /**
+     * This method converts a WGS84 lat/lon coordinate to RD lat/lon
+     * coordinate
+     * @param wgs The WGS84 lat/lon coordinate
+     * @return The RD lat/lon coordinate
+     */
+    public LatLonCoordinate wgs84ToRdLatLon(LatLonCoordinate wgs)
+    {
+        LatLonCoordinate        rdLatLon;
+        CarthesianCoordinate    rdCarthesian;
+        CarthesianCoordinate    wgs84Carthesian;
+        LatLonCoordinate        wgs84LatLon;
+        StereographicProjection p;
+        
+        p               =StereographicProjection.RIJKSDRIEHOEKSMETING;
+        wgs84Carthesian =latLonToCarthesian(wgs, Ellipsoid.ELLIPSOID_WGS84);
+        rdCarthesian    =datumTransformWgs84ToRd(wgs84Carthesian);
+        rdLatLon        =carthesianToLatLon(rdCarthesian, Ellipsoid.ELLIPSOID_BESSEL1841);
+        
+        return rdLatLon;
+    }
+
+
+    /**
+     * This method converts a WGS84 lat/lon coordinate to RD easting/northing
+     * coordinate
+     * @param wgs The WGS84 lat/lon coordinate
+     * @return The RD easting/northing coordinate
+     */
     public DatumCoordinate wgs84ToRd(LatLonCoordinate wgs)
     {
         DatumCoordinate rd;
