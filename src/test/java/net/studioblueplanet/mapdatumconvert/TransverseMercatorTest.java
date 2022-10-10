@@ -165,8 +165,8 @@ public class TransverseMercatorTest
         rdLatLon.h                      =0.0;
         TransverseMercatorProjection instance= TransverseMercatorProjection.OZI_WGS84_TM;
         DatumCoordinate result          = instance.latLonToMapDatum(rdLatLon);
-        assertEquals( 233884.4  , result.easting , 0.1);
-        assertEquals( 582064.0  , result.northing, 0.1);
+        assertEquals( 233884.1  , result.easting , 0.1);
+        assertEquals( 582063.5  , result.northing, 0.1);
         System.out.println(String.format("[%8.6f, %8.6f] to [%8.3f, %8.3f]",
                            rdLatLon.phi, rdLatLon.lambda,
                            result.easting, result.northing));      
