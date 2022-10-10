@@ -17,21 +17,6 @@ package net.studioblueplanet.mapdatumconvert;
 public class MapDatumConvert
 {
     /**
-     * Represents the parameters for an ellipsoid
-     */
-    public static class Ellipsoid
-    {
-        public double a;    // Radius in m
-        public double e;    // Excentricity
-        
-        public Ellipsoid(double a, double e)
-        {
-            this.a=a;
-            this.e=e;
-        }
-    };
-    
-    /**
      * Represents the parameters for Datum Transformation
      */
     public static class DatumTransformParameters
@@ -47,10 +32,6 @@ public class MapDatumConvert
         public double ty;       // origin transfer
         public double tz;       // origin transfer
     }
-    
-    // Settings
-    public static Ellipsoid ellipsoidBessel1841 =new Ellipsoid(6377397.155, 0.081696831222);
-    public static Ellipsoid ellipsoidWgs84      =new Ellipsoid(6378137.0, 0.0818191908426215);
 
     /**
      * Step 2a, 4b.
@@ -200,9 +181,9 @@ public class MapDatumConvert
         
         p               =StereographicProjection.RIJKSDRIEHOEKSMETING;
         rdLatLon        =p.mapDatumToLatLon(rd);
-        rdCarthesian    =this.latLonToCarthesian(rdLatLon, ellipsoidBessel1841);
+        rdCarthesian    =this.latLonToCarthesian(rdLatLon, Ellipsoid.ELLIPSOID_BESSEL1841);
         wgs84Carthesian =this.datumTransformRdToWgs84(rdCarthesian);
-        wgs84LatLon     =this.carthesianToLatLon(wgs84Carthesian, ellipsoidWgs84);
+        wgs84LatLon     =this.carthesianToLatLon(wgs84Carthesian, Ellipsoid.ELLIPSOID_WGS84);
         
         return wgs84LatLon;
     }
@@ -217,9 +198,9 @@ public class MapDatumConvert
         StereographicProjection p;
         
         p               =StereographicProjection.RIJKSDRIEHOEKSMETING;
-        wgs84Carthesian =latLonToCarthesian(wgs, ellipsoidWgs84);
+        wgs84Carthesian =latLonToCarthesian(wgs, Ellipsoid.ELLIPSOID_WGS84);
         rdCarthesian    =datumTransformWgs84ToRd(wgs84Carthesian);
-        rdLatLon        =carthesianToLatLon(rdCarthesian, ellipsoidBessel1841);
+        rdLatLon        =carthesianToLatLon(rdCarthesian, Ellipsoid.ELLIPSOID_BESSEL1841);
         rd              =p.latLonToMapDatum(rdLatLon);
         
         return rd;

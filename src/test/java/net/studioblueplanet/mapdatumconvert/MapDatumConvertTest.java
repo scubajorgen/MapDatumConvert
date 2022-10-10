@@ -12,8 +12,6 @@ import org.junit.BeforeClass;
 import org.junit.Test;
 import static org.junit.Assert.*;
 
-import net.studioblueplanet.mapdatumconvert.MapDatumConvert.Ellipsoid;
-
 /**
  *
  * @author jorgen
@@ -58,7 +56,7 @@ public class MapDatumConvertTest
         latlon.lambda   =4.388054251;
         latlon.phi      =51.98705383;
         latlon.h        =30.696;
-        MapDatumConvert.Ellipsoid el = MapDatumConvert.ellipsoidBessel1841;
+        Ellipsoid el = Ellipsoid.ELLIPSOID_BESSEL1841;
         MapDatumConvert instance = new MapDatumConvert();
         CarthesianCoordinate result = instance.latLonToCarthesian(latlon, el);
         assertEquals(3924096.851, result.X, 0.001);
@@ -126,7 +124,7 @@ public class MapDatumConvertTest
         rd.Y= 301145.338;
         rd.Z=5001908.687;
         MapDatumConvert instance = new MapDatumConvert();
-        LatLonCoordinate result=instance.carthesianToLatLon(rd, MapDatumConvert.ellipsoidWgs84);
+        LatLonCoordinate result=instance.carthesianToLatLon(rd, Ellipsoid.ELLIPSOID_WGS84);
         assertEquals(51.98608734, result.phi    , 0.0000001);
         assertEquals(4.387764738, result.lambda , 0.0000001);
         assertEquals(74.31246664, result.h      , 0.001);        
