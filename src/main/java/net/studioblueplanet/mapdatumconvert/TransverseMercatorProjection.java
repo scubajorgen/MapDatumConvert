@@ -29,7 +29,7 @@ public class TransverseMercatorProjection implements MapProjection
             new TransverseMercatorProjection(Ellipsoid.ELLIPSOID_AIRY, 0.9996012717, 49.0, -2.0, -100000.0, 400000.0);
 
     public  final static TransverseMercatorProjection OZI_WGS84_TM=
-            new TransverseMercatorProjection(Ellipsoid.ELLIPSOID_WGS84, 0.9999079  ,52.15516833, 5.387198333, 463000.0, 155000.0);
+            new TransverseMercatorProjection(Ellipsoid.ELLIPSOID_WGS84, 0.9999079  ,52.1551722, 5.3872035, 463000.0, 155000.0);
     
     /**
      * Constructor. Parametrizes the projection.
