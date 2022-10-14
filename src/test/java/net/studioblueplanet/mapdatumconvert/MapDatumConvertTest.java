@@ -135,6 +135,7 @@ public class MapDatumConvertTest
     
     /**
      * Test of rdToWgs method, of class MapDatumConvert.
+     * 0.00000001 degree ~ 1 cm
      */
     @Test
     public void testRdToWgs84()
@@ -165,6 +166,21 @@ public class MapDatumConvertTest
         System.out.println(String.format("[%8.3f, %8.3f, %5.3f] to [%8.6f, %8.6f, %5.3f]",
                            rd.easting, rd.northing, rd.h,
                            result.phi, result.lambda, result.h));
+        
+        
+        // Rijksdriehoeksmeting reference point Steen RD Westerpad Ameland
+        // Compared to coordinate conversion https://epsg.io/transform#s_srs=28992&t_srs=4326&x=179640.6536000&y=607984.4519000
+        rd.easting  =179640.6536;
+        rd.northing =607984.4519;
+        rd.h        =0.0;
+        result = instance.rdToWgs84(rd);
+        assertEquals(53.4575106, result.phi    , 0.0000001);
+        assertEquals( 5.7581475, result.lambda , 0.0000001);
+        assertEquals(40.7992                   , result.h      , 0.001);        
+        System.out.println(String.format("[%8.3f, %8.3f, %5.3f] to [%8.6f, %8.6f, %5.3f]",
+                           rd.easting, rd.northing, rd.h,
+                           result.phi, result.lambda, result.h));
+        
     }
 
     /**

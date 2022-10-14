@@ -182,7 +182,5 @@ public class TransverseMercatorTest
         
         System.out.println(String.format("Difference: %3.1f, %3.1f m", result.easting-dc.easting, 
                                                                        result.northing-dc.northing));
-        
     }    
-
 }
