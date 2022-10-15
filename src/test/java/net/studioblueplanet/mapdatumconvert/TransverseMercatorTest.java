@@ -51,13 +51,6 @@ public class TransverseMercatorTest
         DatumCoordinate    tm;
         TransverseMercatorProjection instance;
         
-        // OLV Amersfoort
-        lat=52.15516833;
-        lon=5.387198333;
-        //tm=TransverseMercator.latLonToXY(lat, lon);
-        //assertEquals(5780609.0, tm.x, 1);
-        //assertEquals(30.0, tm.y, 1);
-        
         // Example from http://fgg-web.fgg.uni-lj.si/~/mkuhar/Zalozba/TM_projection.pdf
         // 9.3, page 13 Caister water tower
         instance=TransverseMercatorProjection.BRITISH_NATIONAL_GRID;
@@ -74,7 +67,7 @@ public class TransverseMercatorTest
         assertEquals(302646.412, tm.northing, 0.001);
         assertEquals(626238.248, tm.easting, 0.001);
 
-        // OGP Surveying and Positioning Guidance Note number 7, part 2 – May 2009
+        // IOGP Publication 373-7-2 – Geomatics Guidance Note number 7, part 2 – September 2019, p55-56
         lat=50.0+1/60.0*(30.0+0.0/60.0);
         lon= 0.0+1/60.0*(30.0+0.0/60.0);
         tm=instance.latLonToMapDatum(new LatLonCoordinate(lat, lon));
@@ -90,13 +83,6 @@ public class TransverseMercatorTest
         double          lon;
         DatumCoordinate    tm;
         TransverseMercatorProjection instance;
-        
-        // OLV Amersfoort
-        lat=52.15516833;
-        lon=5.387198333;
-        //tm=TransverseMercator.latLonToXY(lat, lon);
-        //assertEquals(5780609.0, tm.x, 1);
-        //assertEquals(30.0, tm.y, 1);
         
         // Example from http://fgg-web.fgg.uni-lj.si/~/mkuhar/Zalozba/TM_projection.pdf
         // 9.3, page 13 Caister water tower
@@ -115,12 +101,41 @@ public class TransverseMercatorTest
         assertEquals(302646.412, tm.northing, 0.01);
         assertEquals(626238.248, tm.easting, 0.001);
 
-        // OGP Surveying and Positioning Guidance Note number 7, part 2 – May 2009
+        // IOGP Publication 373-7-2 – Geomatics Guidance Note number 7, part 2 – September 2019, page 55-56
         lat=50.0+1/60.0*(30.0+0.0/60.0);
         lon= 0.0+1/60.0*(30.0+0.0/60.0);
         tm=instance.latLonToMapDatum2(new LatLonCoordinate(lat, lon));   
         assertEquals(69740.50, tm.northing, 0.01);
         assertEquals(577274.99, tm.easting, 0.01);    
+    }
+    
+    /**
+     * Example from IOGP Publication 373-7-2 – Geomatics Guidance Note number 7, 
+     * part 2 – September 2019, page 55-56
+     */
+    @Test
+    public void testMapDatumToLatLon()
+    {
+        LatLonCoordinate llc;
+        System.out.println("mapDatumToLatLon");   
+        TransverseMercatorProjection instance=TransverseMercatorProjection.BRITISH_NATIONAL_GRID;     
+        DatumCoordinate dc  =new DatumCoordinate();
+
+        // IOGP Publication 373-7-2 – Geomatics Guidance Note number 7, part 2 – September 2019, page 55-56
+        dc.easting          =577274.984;
+        dc.northing         = 69740.493;
+        llc=instance.mapDatumToLatLon(dc);
+        assertEquals(50.5, llc.phi      , 0.00000001);
+        assertEquals( 0.5, llc.lambda   , 0.00000001);
+        
+
+        // Example from http://fgg-web.fgg.uni-lj.si/~/mkuhar/Zalozba/TM_projection.pdf
+        // 9.3, page 13 Caister water tower
+        dc.easting          =651409.903;
+        dc.northing         =313177.270;
+        llc=instance.mapDatumToLatLon(dc);
+        assertEquals(52.0+1/60.0*(39.0+27.2531/60.0), llc.phi     , 0.0000001);
+        assertEquals( 1.0+1/60.0*(43.0+ 4.5177/60.0), llc.lambda  , 0.0000001);
     }
 
     
