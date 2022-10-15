@@ -18,9 +18,10 @@ public class Ellipsoid
     public double e2;   // excentricity squared
     public double n;    // n
         
-    public final static Ellipsoid ELLIPSOID_AIRY        =new Ellipsoid(6377563.396, 6356256.910, null);
-    public final static Ellipsoid ELLIPSOID_WGS84       =new Ellipsoid(6378137.000, 6356752.314, null);        
-    public final static Ellipsoid ELLIPSOID_BESSEL1841  =new Ellipsoid(6377397.155, null       , 1.0/ 299.15281285);        
+    public final static Ellipsoid ELLIPSOID_AIRY        =new Ellipsoid(6377563.396, 6356256.910         , null);
+    public final static Ellipsoid ELLIPSOID_WGS84       =new Ellipsoid(6378137.000, 6356752.315         , null);        
+    public final static Ellipsoid ELLIPSOID_GRS80       =new Ellipsoid(6378137.000, 6356752.314140347   , null);        
+    public final static Ellipsoid ELLIPSOID_BESSEL1841  =new Ellipsoid(6377397.155, null                , 1.0/ 299.15281285);        
         
     /**
      * Constructor. The radius a must be specified. At least one of b or f 
