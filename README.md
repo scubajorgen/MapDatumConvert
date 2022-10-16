@@ -28,4 +28,6 @@ The **Main** class contains a demo. It calculates the easting and northing of th
 1. [Geodetic reference frames in the Netherlands (chapter 6)](https://ncgeo.nl/downloads/43Referentie.pdf)
 1. [The stereographic double projection](http://www2.unb.ca/gge/Pubs/TR46.pdf)
 1. [Map Projections, a working manual](https://pubs.usgs.gov/pp/1395/report.pdf)
-1. [https://cupdf.com/document/g7-2.html](OGP Surveying and Positioning Guidance Note Number 7, part 2 - 2009)
+1. [OGP Surveying and Positioning Guidance Note Number 7, part 2 - 2009](https://cupdf.com/document/g7-2.html)
+1. [Geomatics
+Guidance Note Number 7, part 2: Coordinate Conversions and Transformations including Formulas](https://www.iogp.org/wp-content/uploads/2019/09/373-07-02.pdf)
