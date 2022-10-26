@@ -6,28 +6,37 @@
 package net.studioblueplanet.mapdatumconvert;
 
 /**
- * This class represents the Sperical Mercator projection 
+ * This class represents the Sperical Mercator projection EPSG:3857.
+ * This projection takes in WGS84 elliptical latitude/longitude coordinates
+ * but treats them like spherical. This results in less calculation at the
+ * expense of pretty large projection errors.
  * @author jorgen
  */
 public class WebMercatorProjection implements MapProjection
 {
-    Ellipsoid el=Ellipsoid.ELLIPSOID_WGS84;
+    private final Ellipsoid     el=Ellipsoid.ELLIPSOID_WGS84;
+    private final double        lambda0;
     
+    /**
+     * Constructor
+     * @param lambda0 Longitude of the origin (central meridian) in degrees
+     */
+    public WebMercatorProjection(double lambda0)
+    {
+        this.lambda0=lambda0;
+    }
     
     @Override
     public DatumCoordinate latLonToMapDatum(LatLonCoordinate latlon)
     {
         double          x;
         double          y;
-        double          k0;
-        double          r;
+        double          a;
         DatumCoordinate dc;
         
-        r           =el.a;
-//        k0          =Math.cos(Math.toRadians(latlon.phi));
-        k0          =1.0;
-        x           =k0*Math.toRadians(latlon.lambda)*r;     // Easting
-        y           =k0*Math.log(Math.tan(Math.PI/4.0+Math.toRadians(latlon.phi)/2.0))*r;
+        a           =el.a;
+        x           =Math.toRadians(latlon.lambda-lambda0)*a;     // Easting
+        y           =Math.log(Math.tan(Math.PI/4.0+Math.toRadians(latlon.phi)/2.0))*a;
         
         dc=new DatumCoordinate();
         dc.easting  =x;
@@ -40,16 +49,14 @@ public class WebMercatorProjection implements MapProjection
     public LatLonCoordinate mapDatumToLatLon(DatumCoordinate  md)
     {
         LatLonCoordinate    llc;
-        double              lambda;
-        double              phi;
-        double              r;
+        double              phiRad;
+        double              a;
         
-        r           =el.a;        
-        phi         =Math.toDegrees(Math.atan(Math.exp(md.northing / r)) * 2 - Math.PI/2);
-        lambda      =Math.toDegrees(md.easting/r);
+        a           =el.a;        
+        phiRad      =Math.atan(Math.exp(md.northing / a)) * 2 - Math.PI/2;
         llc         =new LatLonCoordinate();
-        llc.lambda  =lambda;
-        llc.phi     =phi;
+        llc.lambda  =Math.toDegrees(md.easting/a)+lambda0;
+        llc.phi     =Math.toDegrees(phiRad);
         return llc;
     }
 }

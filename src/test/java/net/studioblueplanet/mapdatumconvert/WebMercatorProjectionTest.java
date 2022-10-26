@@ -53,10 +53,18 @@ public class WebMercatorProjectionTest
         LatLonCoordinate latlon = new LatLonCoordinate();
         latlon.lambda=9.770602;
         latlon.phi=47.6035525;
-        WebMercatorProjection instance = new WebMercatorProjection();
+        WebMercatorProjection instance = new WebMercatorProjection(0.0);
         DatumCoordinate result = instance.latLonToMapDatum(latlon);
+        assertEquals(6041151.705173198 , result.northing, 0.001);
+        assertEquals(1087658.4393837405, result.easting , 0.001);
+
+        latlon.lambda   =9.770602;
+        latlon.phi      =47.6035525;
+        instance        = new WebMercatorProjection(9.770602);
+        result          = instance.latLonToMapDatum(latlon);
         assertEquals(6041151.705173198, result.northing, 0.001);
-        assertEquals(1087658.4393837405, result.easting, 0.001);
+        assertEquals(      0.0        , result.easting , 0.001);
+
     }
 
     /**
@@ -69,11 +77,16 @@ public class WebMercatorProjectionTest
         DatumCoordinate md = new DatumCoordinate();
         md.northing  =6041151.705173198;
         md.easting   =1087658.4393837405;
-        WebMercatorProjection instance = new WebMercatorProjection();
+        WebMercatorProjection instance = new WebMercatorProjection(0.0);
         LatLonCoordinate result = instance.mapDatumToLatLon(md);
-        assertEquals(47.6035525, result.phi, 0.00001);
-        assertEquals(9.770602, result.lambda, 0.00001);
+        assertEquals(47.6035525, result.phi   , 0.00001);
+        assertEquals( 9.770602 , result.lambda, 0.00001);
 
+        md.northing  =6041151.705173198;
+        md.easting   =0.0;
+        instance     = new WebMercatorProjection(9.7706020);
+        result       = instance.mapDatumToLatLon(md);
+        assertEquals(47.6035525, result.phi   , 0.00001);
+        assertEquals( 9.770602 , result.lambda, 0.00001);
     }
-    
 }
