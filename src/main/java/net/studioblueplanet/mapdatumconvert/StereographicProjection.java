@@ -195,18 +195,26 @@ public class StereographicProjection implements MapProjection
         
         dc          =new DatumCoordinate();
         
-        phiRad      =Math.PI*latlon.phi/180.0;
-        lambdaRad   =Math.PI*latlon.lambda/180.0;
-        BRad        =sphereLat(phiRad);         // Latitude on sphere
-        LRad        =sphereLon(lambdaRad);      // Longitude on spere
-        dLRad       =LRad-L0Rad;
-        PsiRad      =Math.asin(Math.sqrt(Math.pow(Math.sin(0.5*(BRad-B0Rad)),2.0)+
-                               Math.pow(Math.sin(0.5*dLRad), 2.0)*Math.cos(BRad)*Math.cos(B0Rad)))*2.0;
-        sinAlpha    =Math.sin(dLRad)*Math.cos(BRad)/Math.sin(PsiRad);
-        cosAlpha    =(Math.sin(BRad)-Math.sin(B0Rad)*Math.cos(PsiRad))/(Math.cos(B0Rad)*Math.sin(PsiRad));
-        r           =2*k*R*Math.tan(PsiRad/2.0);
-        dc.easting  =r*sinAlpha+x0;
-        dc.northing =r*cosAlpha+y0;
+        if (latlon.lambda==lambda0 && latlon.phi==phi0)
+        {
+            dc.easting=x0;
+            dc.northing=y0;
+        }
+        else
+        {
+            phiRad      =Math.PI*latlon.phi/180.0;
+            lambdaRad   =Math.PI*latlon.lambda/180.0;
+            BRad        =sphereLat(phiRad);         // Latitude on sphere
+            LRad        =sphereLon(lambdaRad);      // Longitude on spere
+            dLRad       =LRad-L0Rad;
+            PsiRad      =Math.asin(Math.sqrt(Math.pow(Math.sin(0.5*(BRad-B0Rad)),2.0)+
+                                   Math.pow(Math.sin(0.5*dLRad), 2.0)*Math.cos(BRad)*Math.cos(B0Rad)))*2.0;
+            sinAlpha    =Math.sin(dLRad)*Math.cos(BRad)/Math.sin(PsiRad);
+            cosAlpha    =(Math.sin(BRad)-Math.sin(B0Rad)*Math.cos(PsiRad))/(Math.cos(B0Rad)*Math.sin(PsiRad));
+            r           =2*k*R*Math.tan(PsiRad/2.0);
+            dc.easting  =r*sinAlpha+x0;
+            dc.northing =r*cosAlpha+y0;
+        }
         dc.h        =latlon.h-N;
         
         return dc;

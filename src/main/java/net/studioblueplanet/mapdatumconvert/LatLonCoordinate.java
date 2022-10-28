@@ -15,12 +15,20 @@ public class LatLonCoordinate
     public double lambda;   // longitude in degrees
     public double h;        // height in m    
 
-    public LatLonCoordinate(double lat, double lon)
+    public LatLonCoordinate(double lat, double lon, double h)
     {
         this.phi    =lat;
         this.lambda =lon;
         this.h      =h;
     }
+
+    public LatLonCoordinate(double lat, double lon)
+    {
+        this.phi    =lat;
+        this.lambda =lon;
+        this.h      =0;
+    }
+
     
     public LatLonCoordinate()
     {
