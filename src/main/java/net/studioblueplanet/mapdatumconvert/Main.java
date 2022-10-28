@@ -5,13 +5,26 @@
  */
 package net.studioblueplanet.mapdatumconvert;
 
-
+import org.jdesktop.application.Application;
+import org.jdesktop.application.SingleFrameApplication;
+import org.jdesktop.application.ResourceMap;
+import org.jdesktop.application.ApplicationContext;
 /**
  *
  * @author jorgen
  */
-public class Main
+public class Main extends SingleFrameApplication
 {
+    private MainView mapView;
+    /**
+     * At startup create and show the main frame of the application.
+     */
+    @Override protected void startup() 
+    {
+        mapView=new MainView();
+        mapView.setVisible(true);
+    }   
+    
     private static void rdWgsRoundTrip()
     {
         DatumCoordinate     rd;
@@ -151,6 +164,8 @@ public class Main
     
     public static void main(String args[])
     {
+        launch(Main.class, args);
+        
         System.out.println("_________________________________________________________________________________");
         System.out.println("                           MAP DATUM CONVERSION DEMO                             ");
         System.out.println("_________________________________________________________________________________");
