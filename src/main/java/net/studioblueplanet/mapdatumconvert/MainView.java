@@ -26,9 +26,14 @@ import org.json.simple.parser.ParseException;
  */
 public class MainView extends javax.swing.JFrame
 {
-    public static class Polygon
+    public static class PolygonLatLon
     {
         List<LatLonCoordinate> coordinates=new ArrayList<>();
+    }
+    
+    public static class PolygonDatum
+    {
+        List<DatumCoordinate>  coordinates=new ArrayList<>();
     }
     
     // Martinitoren
@@ -47,14 +52,16 @@ public class MainView extends javax.swing.JFrame
     private int                             bottomRightY;
     private double                          meterPerPixel;
     
-    private List<Polygon> polygons=new ArrayList<>();    
+    private final List<PolygonLatLon>       polygonsWGS84 =new ArrayList<>();    
+    private final List<PolygonDatum>        polygonsRD    =new ArrayList<>();    
    
     /**
      * Creates new form MainView
      */
     public MainView()
     {
-        readMap();
+        readMapWGS84();
+        readMapRD();
         initComponents();
     }
 
@@ -62,7 +69,7 @@ public class MainView extends javax.swing.JFrame
      * Reads the outline of the Netherlands from JSON file as a series of
      * polygons consisting of WGS84 coordinates.
      */
-    private void readMap()
+    private void readMapWGS84()
     {
         double lat;
         double lon;
@@ -86,7 +93,7 @@ public class MainView extends javax.swing.JFrame
                 {
                     for (Object exterior : (JSONArray)pgon)
                     {
-                        Polygon polygon=new Polygon();
+                        PolygonLatLon polygon=new PolygonLatLon();
                         for (Object coordinate : (JSONArray)exterior)
                         {
                             lon=Double.parseDouble(((JSONArray)coordinate).get(0).toString());
@@ -94,7 +101,7 @@ public class MainView extends javax.swing.JFrame
                             LatLonCoordinate llc=new LatLonCoordinate(lat, lon);
                             polygon.coordinates.add(llc);
                         }
-                        polygons.add(polygon);
+                        polygonsWGS84.add(polygon);
                     }
                 }
             }
@@ -105,13 +112,61 @@ public class MainView extends javax.swing.JFrame
             System.err.println(e.getMessage());
         }
     }
+    /**
+     * Reads the outline of the Netherlands from JSON file as a series of
+     * polygons consisting of WGS84 coordinates.
+     */
+    private void readMapRD()
+    {
+        double northing;
+        double easting;
+        
+        //JSON parser object to parse read file
+        JSONParser jsonParser = new JSONParser();
+         
+        try (FileReader reader = new FileReader("landsdeel_RD.json"))
+        {
+            //Read JSON file
+            Object obj = jsonParser.parse(reader);
+ 
+            JSONObject map = (JSONObject) obj;
+            
+            JSONArray parts=(JSONArray)map.get("features");
+            for (Object part : parts)
+            {
+                JSONObject geometry=(JSONObject)((JSONObject)part).get("geometry");
+                JSONArray pgons=(JSONArray)geometry.get("coordinates");
+                for (Object pgon : pgons)
+                {
+                    for (Object exterior : (JSONArray)pgon)
+                    {
+                        PolygonDatum polygon=new PolygonDatum();
+                        for (Object coordinate : (JSONArray)exterior)
+                        {
+                            easting  =Double.parseDouble(((JSONArray)coordinate).get(0).toString());
+                            northing =Double.parseDouble(((JSONArray)coordinate).get(1).toString());
+                            DatumCoordinate dc=new DatumCoordinate(northing, easting);
+                            polygon.coordinates.add(dc);
+                        }
+                        polygonsRD.add(polygon);
+                    }
+                }
+            }
+            System.out.println("Done reading map");
+        } 
+        catch (IOException | ParseException e) 
+        {
+            System.err.println(e.getMessage());
+        }
+    }
+
     
     /**
-     * Draws the outline map.
+     * Draws the outline map based on the WGS84 coordinates
      * @param g Graphics to use
      * @param projection Projection to use.
      */
-    private void drawMap(Graphics g, MapProjection projection)
+    private void drawMapWGS84(Graphics g, MapProjection projection)
     {
         LatLonCoordinate    c;
         LatLonCoordinate    prevC;
@@ -119,7 +174,7 @@ public class MainView extends javax.swing.JFrame
         DatumCoordinate     prevD;
         double              x1, y1, x2, y2;
 
-        for (Polygon p : polygons)
+        for (PolygonLatLon p : polygonsWGS84)
         {
             c       =p.coordinates.get(0);
             prevD   =projection.latLonToMapDatum(c);
@@ -136,6 +191,77 @@ public class MainView extends javax.swing.JFrame
             }
         }
     }
+    
+    /**
+     * Draws the outline map based on the RD coordinates
+     * @param g Graphics to use
+     * @param projection Projection to use.
+     */
+    private void drawMapRD(Graphics g)
+    {
+        DatumCoordinate     d;
+        DatumCoordinate     prevD;
+        double              x1, y1, x2, y2;
+
+        for (PolygonDatum p : polygonsRD)
+        {
+            prevD   =p.coordinates.get(0);
+
+            for(int i=1; i<p.coordinates.size(); i++)
+            {
+                d   =p.coordinates.get(i);
+                x1  =topLeftX+(d.easting-topLeft.easting)/meterPerPixel;
+                y1  =topLeftY+(topLeft.northing-d.northing)/meterPerPixel;
+                x2  =topLeftX+(prevD.easting-topLeft.easting)/meterPerPixel;
+                y2  =topLeftY+(topLeft.northing-prevD.northing)/meterPerPixel;
+                g.drawLine((int)x1, (int)y1, (int)x2, (int)y2);
+                prevD=d;
+            }
+        }
+    }
+
+    /**
+     * Draws the outline map based on the WGS84 coordinates
+     * @param g Graphics to use
+     * @param projection Projection to use.
+     */
+    private void drawMapRD2(Graphics g, MapProjection projection)
+    {
+        LatLonCoordinate        cWGS84;
+        LatLonCoordinate        cRD;
+        LatLonCoordinate        prevCRD;
+        CarthesianCoordinate    ccRD;
+        CarthesianCoordinate    ccWGS84;
+        DatumCoordinate         dRD;
+        DatumCoordinate         prevDRD;
+        double                  x1, y1, x2, y2;
+        MapDatumConvert         mdc;
+
+        mdc=new MapDatumConvert();
+        for (PolygonLatLon p : polygonsWGS84)
+        {
+            cWGS84       =p.coordinates.get(0);
+            ccWGS84      =mdc.latLonToCarthesian(cWGS84, Ellipsoid.ELLIPSOID_WGS84);
+            ccRD         =mdc.datumTransformWgs84ToRd(ccWGS84);
+            cRD          =mdc.carthesianToLatLon(ccRD, Ellipsoid.ELLIPSOID_BESSEL1841);
+            prevDRD   =projection.latLonToMapDatum(cRD);
+            for(int i=1; i<p.coordinates.size(); i++)
+            {
+                cWGS84       =p.coordinates.get(i);
+                ccWGS84      =mdc.latLonToCarthesian(cWGS84, Ellipsoid.ELLIPSOID_WGS84);
+                ccRD         =mdc.datumTransformWgs84ToRd(ccWGS84);
+                cRD          =mdc.carthesianToLatLon(ccRD, Ellipsoid.ELLIPSOID_BESSEL1841);
+                dRD   =projection.latLonToMapDatum(cRD);
+                x1  =topLeftX+(dRD.easting-topLeft.easting)/meterPerPixel;
+                y1  =topLeftY+(topLeft.northing-dRD.northing)/meterPerPixel;
+                x2  =topLeftX+(prevDRD.easting-topLeft.easting)/meterPerPixel;
+                y2  =topLeftY+(topLeft.northing-prevDRD.northing)/meterPerPixel;
+                g.drawLine((int)x1, (int)y1, (int)x2, (int)y2);
+                prevDRD=dRD;
+            }
+        }
+    }
+
     
     /**
      * Draws a reference point
@@ -196,13 +322,13 @@ public class MainView extends javax.swing.JFrame
         calibrate(projection);
         
         g.setColor(Color.red);
-        drawMap(g, projection);
+        drawMapWGS84(g, projection);
         drawReferencePoint(g, projection, OLV);
         dc1=drawReferencePoint(g, projection, MARTINI);
 
         projection           =new WebMercatorProjection(5.3872035);
         g.setColor(Color.blue);
-        drawMap(g, projection);
+        drawMapWGS84(g, projection);
         drawReferencePoint(g, projection, OLV);
         dc2=drawReferencePoint(g, projection, MARTINI);
         
@@ -231,7 +357,7 @@ public class MainView extends javax.swing.JFrame
         g.setColor(Color.red);
         drawReferencePoint(g, projection, OLV);
         dc1=drawReferencePoint(g, projection, MARTINI);
-        drawMap(g, projection);
+        drawMapWGS84(g, projection);
 
         projection           =new TransverseMercatorProjection(Ellipsoid.ELLIPSOID_WGS84, 
                                         0.9999079,
@@ -240,11 +366,44 @@ public class MainView extends javax.swing.JFrame
         g.setColor(Color.blue);
         drawReferencePoint(g, projection, OLV);
         dc2=drawReferencePoint(g, projection, MARTINI);
-        drawMap(g, projection);
+        drawMapWGS84(g, projection);
 
         System.out.println("Diff "+Math.sqrt(Math.pow((dc2.easting-dc1.easting), 2.0)+Math.pow((dc2.northing-dc1.northing), 2.0))+" meter");
     }
 
+    /**
+     * Compare Rijksdriehoeksmeting to Transverse Mercator
+     * @param g 
+     */
+    private void rijksdriehoeksmeting(Graphics g)
+    {
+        MapProjection   projection;
+        DatumCoordinate dc1, dc2;
+        MapDatumConvert mdc;
+        
+        mdc=new MapDatumConvert();
+
+        projection           =          StereographicProjection.RIJKSDRIEHOEKSMETING;
+        calibrate(projection);
+        
+        g.setColor(Color.red);
+        drawReferencePoint(g, projection, mdc.wgs84ToRdLatLon(OLV));
+        dc1=drawReferencePoint(g, projection, mdc.wgs84ToRdLatLon(MARTINI));
+        drawMapRD2(g, projection);
+
+        projection           =TransverseMercatorProjection.OZI_WGS84_TM;
+        g.setColor(Color.blue);
+        drawReferencePoint(g, projection, OLV);
+        dc2=drawReferencePoint(g, projection, MARTINI);
+        drawMapWGS84(g, projection);
+
+        System.out.println("Diff "+
+                           (dc2.easting-dc1.easting)+"/"+(dc2.northing-dc1.northing)+" Total: "+
+                           Math.sqrt(Math.pow((dc2.easting-dc1.easting), 2.0)+Math.pow((dc2.northing-dc1.northing), 2.0))+" meter");
+
+        
+    }
+    
     /**
      * The paint() method responsible for painting the canvas
      * @param g Graphics of the canvas
@@ -252,7 +411,8 @@ public class MainView extends javax.swing.JFrame
     @Override
     public void paint(Graphics g)
     {
-        stereographicVsTransverseMercator(g);
+        rijksdriehoeksmeting(g);
+//        stereographicVsTransverseMercator(g);
 //        mercatorVsWebMercator(g);
     }
     
