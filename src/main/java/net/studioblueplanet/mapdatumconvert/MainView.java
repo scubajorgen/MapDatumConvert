@@ -8,9 +8,15 @@ package net.studioblueplanet.mapdatumconvert;
 import java.awt.Color;
 import java.awt.Dimension;
 import java.awt.Graphics;
-import java.io.FileNotFoundException;
+import java.io.BufferedReader;
 import java.io.FileReader;
 import java.io.IOException;
+import java.io.InputStreamReader;
+import java.net.HttpURLConnection;
+import java.net.URL;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.List;
  
@@ -31,45 +37,147 @@ public class MainView extends javax.swing.JFrame
         List<LatLonCoordinate> coordinates=new ArrayList<>();
     }
     
-    public static class PolygonDatum
-    {
-        List<DatumCoordinate>  coordinates=new ArrayList<>();
-    }
+    public enum TestType {TEST1, TEST2, TEST3, TEST4};
+    
+    
+    private static final    String              USER_AGENT      = "Mozilla/5.0";
+
+    private static final    String              POST_PARAMS     = "userName=JohnDoe";   
+    private static final    String              GEBIEDSDEEL_URL ="https://service.pdok.nl/cbs/gebiedsindelingen/2022/wfs/v1_0?"+
+                                                                 "request=GetFeature&service=WFS&typenames=landsdeel_gegeneraliseerd&version=2.0.0&"+
+                                                                 "outputformat=json&srsname=urn:ogc:def:crs:EPSG::4326";
+    private static final    boolean             READ_FROM_PDOK  =true;
     
     // Martinitoren
-    private static final LatLonCoordinate   MARTINI =new LatLonCoordinate(53.2193683, 6.56827);
+    private static final    LatLonCoordinate    MARTINI_WGS84   =new LatLonCoordinate(53.2193683, 6.56827);
+    private static final    LatLonCoordinate    MARTINI_RD      =new LatLonCoordinate(53.2204823, 6.5688795);
 
     // OLV Amersfoort
-    private static final LatLonCoordinate   OLV     =new LatLonCoordinate(52.1551722, 5.3872035);    
+    private static final    LatLonCoordinate    OLV_WGS84       =new LatLonCoordinate(52.1551722, 5.3872035);    
+    private static final    LatLonCoordinate    OLV_RD          =new LatLonCoordinate(52.156160556, 5.387638889);
     
-    private final   LatLonCoordinate        topLeftLL    =new LatLonCoordinate(53.80, 3.10);
-    private final   LatLonCoordinate        bottomRightLL=new LatLonCoordinate(50.70, 7.30);
-    private         DatumCoordinate         topLeft;
-    private         DatumCoordinate         bottomRight;
-    private int                             topLeftX;
-    private int                             topLeftY;
-    private int                             bottomRightX;
-    private int                             bottomRightY;
-    private double                          meterPerPixel;
+    private final           LatLonCoordinate    topLeftLL       =new LatLonCoordinate(53.80, 3.10);
+    private final           LatLonCoordinate    bottomRightLL   =new LatLonCoordinate(50.70, 7.30);
+    private                 DatumCoordinate     topLeft;
+    private                 DatumCoordinate     bottomRight;
+    private                 int                 topLeftX;
+    private                 int                 topLeftY;
+    private                 int                 bottomRightX;
+    private                 int                 bottomRightY;
+    private                 double              meterPerPixel;
     
-    private final List<PolygonLatLon>       polygonsWGS84 =new ArrayList<>();    
-    private final List<PolygonDatum>        polygonsRD    =new ArrayList<>();    
+    private final           List<PolygonLatLon> polygonsWGS84   =new ArrayList<>();    
+    private final           List<PolygonLatLon> polygonsRD      =new ArrayList<>();    
+    
+    private                 TestType            test            =TestType.TEST1;
    
     /**
      * Creates new form MainView
      */
     public MainView()
     {
-        readMapWGS84();
-        readMapRD();
+        String jsonString;
+   
+        if (READ_FROM_PDOK)
+        {
+            jsonString=sendGet(GEBIEDSDEEL_URL).toString();
+        }
+        else
+        {
+            jsonString=this.readFile("landsdeel_WGS84.json");
+        }
+        readMap(jsonString);
+        convertToRD();
         initComponents();
     }
 
     /**
+     * Executes a HTTP request
+     * @param getUrl The URL to request
+     * @return The response as list of strings
+     * @throws IOException 
+     */
+    private StringBuffer sendGet(String getUrl)
+    {
+        StringBuffer response = new StringBuffer();
+        try
+        {
+        URL obj = new URL(getUrl);
+        HttpURLConnection con = (HttpURLConnection)obj.openConnection();
+        con.setRequestMethod("GET");
+        con.setRequestProperty("User-Agent", USER_AGENT);
+        int responseCode = con.getResponseCode();
+        System.out.println("GET Response Code :: " + responseCode);
+        if (responseCode == HttpURLConnection.HTTP_OK) 
+        { // success
+            BufferedReader in = new BufferedReader(new InputStreamReader(con.getInputStream()));
+            String inputLine;
+            while ((inputLine = in.readLine()) != null) 
+            {
+                response.append(inputLine);
+            }
+            in.close();
+        } 
+        else 
+        {
+            System.err.println("GET request not worked");
+        }
+        }
+        catch(IOException e)
+        {
+            System.out.println("Error reading PDOK: "+e.getMessage());
+        }
+        return response;
+    }
+    
+    /**
+     * Reads JSON file
+     * @param filename Filename
+     * @return File as String
+     */
+    private String readFile(String filename)
+    {
+        List<String>    strings;
+        String          returnValue;
+        
+        returnValue=null;
+        Path path = Paths.get(filename);
+        try 
+        {
+            byte[] encoded = Files.readAllBytes(path);
+            returnValue=new String(encoded, "UTF8");
+        } 
+        catch (Exception e) 
+        {
+            System.err.println("Error :"+e.getMessage());
+        }
+        return returnValue;
+    }
+    
+    /**
+     * Converts the WGS84 polygons to RD lat/lon polygons
+     */
+    private void convertToRD()
+    {
+        MapDatumConvert mdc=new MapDatumConvert();
+        PolygonLatLon   pRD;
+        
+        for (PolygonLatLon p : polygonsWGS84)
+        {
+            pRD=new PolygonLatLon();
+            polygonsRD.add(p);
+            for(LatLonCoordinate c : p.coordinates)
+            {
+                pRD.coordinates.add(mdc.wgs84ToRdLatLon(c));
+            }
+        }
+    }
+    
+    /**
      * Reads the outline of the Netherlands from JSON file as a series of
      * polygons consisting of WGS84 coordinates.
      */
-    private void readMapWGS84()
+    private void readMap(String jsonString)
     {
         double lat;
         double lon;
@@ -77,10 +185,10 @@ public class MainView extends javax.swing.JFrame
         //JSON parser object to parse read file
         JSONParser jsonParser = new JSONParser();
          
-        try (FileReader reader = new FileReader("landsdeel_WGS84.json"))
+        try
         {
             //Read JSON file
-            Object obj = jsonParser.parse(reader);
+            Object obj = jsonParser.parse(jsonString);
  
             JSONObject map = (JSONObject) obj;
             
@@ -107,66 +215,18 @@ public class MainView extends javax.swing.JFrame
             }
             System.out.println("Done reading map");
         } 
-        catch (IOException | ParseException e) 
+        catch (ParseException e) 
         {
             System.err.println(e.getMessage());
         }
     }
-    /**
-     * Reads the outline of the Netherlands from JSON file as a series of
-     * polygons consisting of WGS84 coordinates.
-     */
-    private void readMapRD()
-    {
-        double northing;
-        double easting;
-        
-        //JSON parser object to parse read file
-        JSONParser jsonParser = new JSONParser();
-         
-        try (FileReader reader = new FileReader("landsdeel_RD.json"))
-        {
-            //Read JSON file
-            Object obj = jsonParser.parse(reader);
- 
-            JSONObject map = (JSONObject) obj;
-            
-            JSONArray parts=(JSONArray)map.get("features");
-            for (Object part : parts)
-            {
-                JSONObject geometry=(JSONObject)((JSONObject)part).get("geometry");
-                JSONArray pgons=(JSONArray)geometry.get("coordinates");
-                for (Object pgon : pgons)
-                {
-                    for (Object exterior : (JSONArray)pgon)
-                    {
-                        PolygonDatum polygon=new PolygonDatum();
-                        for (Object coordinate : (JSONArray)exterior)
-                        {
-                            easting  =Double.parseDouble(((JSONArray)coordinate).get(0).toString());
-                            northing =Double.parseDouble(((JSONArray)coordinate).get(1).toString());
-                            DatumCoordinate dc=new DatumCoordinate(northing, easting);
-                            polygon.coordinates.add(dc);
-                        }
-                        polygonsRD.add(polygon);
-                    }
-                }
-            }
-            System.out.println("Done reading map");
-        } 
-        catch (IOException | ParseException e) 
-        {
-            System.err.println(e.getMessage());
-        }
-    }
-
     
     /**
      * Draws the outline map based on the WGS84 coordinates
      * @param g Graphics to use
      * @param projection Projection to use.
      */
-    private void drawMapWGS84(Graphics g, MapProjection projection)
+    private void drawMap(Graphics g, List<PolygonLatLon> map, MapProjection projection)
     {
         LatLonCoordinate    c;
         LatLonCoordinate    prevC;
@@ -193,83 +253,12 @@ public class MainView extends javax.swing.JFrame
     }
     
     /**
-     * Draws the outline map based on the RD coordinates
-     * @param g Graphics to use
-     * @param projection Projection to use.
-     */
-    private void drawMapRD(Graphics g)
-    {
-        DatumCoordinate     d;
-        DatumCoordinate     prevD;
-        double              x1, y1, x2, y2;
-
-        for (PolygonDatum p : polygonsRD)
-        {
-            prevD   =p.coordinates.get(0);
-
-            for(int i=1; i<p.coordinates.size(); i++)
-            {
-                d   =p.coordinates.get(i);
-                x1  =topLeftX+(d.easting-topLeft.easting)/meterPerPixel;
-                y1  =topLeftY+(topLeft.northing-d.northing)/meterPerPixel;
-                x2  =topLeftX+(prevD.easting-topLeft.easting)/meterPerPixel;
-                y2  =topLeftY+(topLeft.northing-prevD.northing)/meterPerPixel;
-                g.drawLine((int)x1, (int)y1, (int)x2, (int)y2);
-                prevD=d;
-            }
-        }
-    }
-
-    /**
-     * Draws the outline map based on the WGS84 coordinates
-     * @param g Graphics to use
-     * @param projection Projection to use.
-     */
-    private void drawMapRD2(Graphics g, MapProjection projection)
-    {
-        LatLonCoordinate        cWGS84;
-        LatLonCoordinate        cRD;
-        LatLonCoordinate        prevCRD;
-        CarthesianCoordinate    ccRD;
-        CarthesianCoordinate    ccWGS84;
-        DatumCoordinate         dRD;
-        DatumCoordinate         prevDRD;
-        double                  x1, y1, x2, y2;
-        MapDatumConvert         mdc;
-
-        mdc=new MapDatumConvert();
-        for (PolygonLatLon p : polygonsWGS84)
-        {
-            cWGS84       =p.coordinates.get(0);
-            ccWGS84      =mdc.latLonToCarthesian(cWGS84, Ellipsoid.ELLIPSOID_WGS84);
-            ccRD         =mdc.datumTransformWgs84ToRd(ccWGS84);
-            cRD          =mdc.carthesianToLatLon(ccRD, Ellipsoid.ELLIPSOID_BESSEL1841);
-            prevDRD   =projection.latLonToMapDatum(cRD);
-            for(int i=1; i<p.coordinates.size(); i++)
-            {
-                cWGS84       =p.coordinates.get(i);
-                ccWGS84      =mdc.latLonToCarthesian(cWGS84, Ellipsoid.ELLIPSOID_WGS84);
-                ccRD         =mdc.datumTransformWgs84ToRd(ccWGS84);
-                cRD          =mdc.carthesianToLatLon(ccRD, Ellipsoid.ELLIPSOID_BESSEL1841);
-                dRD   =projection.latLonToMapDatum(cRD);
-                x1  =topLeftX+(dRD.easting-topLeft.easting)/meterPerPixel;
-                y1  =topLeftY+(topLeft.northing-dRD.northing)/meterPerPixel;
-                x2  =topLeftX+(prevDRD.easting-topLeft.easting)/meterPerPixel;
-                y2  =topLeftY+(topLeft.northing-prevDRD.northing)/meterPerPixel;
-                g.drawLine((int)x1, (int)y1, (int)x2, (int)y2);
-                prevDRD=dRD;
-            }
-        }
-    }
-
-    
-    /**
      * Draws a reference point
      * @param g Graphics to use
      * @param projection Projection to use
      * @param llc Coordinate of the reference point
      */
-    private DatumCoordinate drawReferencePoint(Graphics g, MapProjection projection, LatLonCoordinate llc)
+    private DatumCoordinate drawReferencePoint(Graphics g, MapProjection projection, LatLonCoordinate llc, String name)
     {
         DatumCoordinate dc;
         double          x;
@@ -281,7 +270,7 @@ public class MainView extends javax.swing.JFrame
         y=topLeftY+(topLeft.northing-dc.northing)/meterPerPixel;
         g.fillOval((int)x, (int)y, 10, 10);    
 
-        System.out.println("Ref1 "+dc.easting+" "+dc.northing);
+        System.out.println(String.format("%s E/N: %8.1f/%8.1f", name, dc.easting, dc.northing));
         return dc;
     }
     
@@ -296,7 +285,7 @@ public class MainView extends javax.swing.JFrame
         double          dxPixel;
         double          dyPixel;
         
-        d           =this.getSize();
+        d           =this.jPanelMap.getSize();
         topLeftX    =0;
         topLeftY    =0;
         bottomRightX=d.width;
@@ -306,8 +295,57 @@ public class MainView extends javax.swing.JFrame
         dxPixel=(bottomRight.easting-topLeft.easting     )/(bottomRightX-topLeftX);
         dyPixel=(topLeft.northing   -bottomRight.northing)/(bottomRightY-topLeftY);
         meterPerPixel=Math.max(dxPixel, dyPixel);
-        
     }
+
+    /**
+     * Reports the difference between the two datum coordinate 
+     * @param dc1
+     * @param dc2 
+     */
+    private void report(DatumCoordinate dc1, DatumCoordinate dc2)
+    {
+        System.out.println(String.format("Diff     E/N: %8.1f/%8.1f Total: %6.1f meter", 
+                            (dc2.easting-dc1.easting), (dc2.northing-dc1.northing),
+                            Math.sqrt(Math.pow((dc2.easting-dc1.easting), 2.0)+Math.pow((dc2.northing-dc1.northing), 2.0))));        
+    }
+    
+    /**
+     * Execute a comparison
+     * @param g
+     * @param p1
+     * @param map1
+     * @param center1
+     * @param referencePoint1
+     * @param p2
+     * @param map2
+     * @param center2
+     * @param referencePoint2 
+     */
+    private void compare(Graphics g, 
+                         MapProjection p1, List<PolygonLatLon> map1, LatLonCoordinate center1, LatLonCoordinate referencePoint1, 
+                         MapProjection p2, List<PolygonLatLon> map2, LatLonCoordinate center2, LatLonCoordinate referencePoint2)
+    {
+        DatumCoordinate dc1, dc2;
+        
+        calibrate(p1);
+        
+        System.out.println(p1.getClass().toString());
+        g.clearRect(topLeftX, topLeftY, bottomRightX-topLeftX, bottomRightX-topLeftX);
+        g.setColor(Color.red);
+        drawMap(g, map1, p1);
+        drawReferencePoint(g, p1, center1, "OLV     ");
+        dc1=drawReferencePoint(g, p1, referencePoint1, "MARTINI ");
+
+        System.out.println(p2.getClass().toString());
+        g.setColor(Color.blue);
+        drawMap(g, map2, p2);
+        drawReferencePoint(g, p2, center2, "OLV     ");
+        dc2=drawReferencePoint(g, p2, referencePoint2, "MARTINI ");
+        
+        report(dc1, dc2);        
+    }
+            
+    
     
     /**
      * Comparison between mercator and Web mercator
@@ -315,24 +353,13 @@ public class MainView extends javax.swing.JFrame
      */
     private void mercatorVsWebMercator(Graphics g)
     {
-        MapProjection   projection;
-        DatumCoordinate dc1, dc2;
+        MapProjection   projection1, projection2;
         
-        projection           =new MercatorProjection(5.3872035);
-        calibrate(projection);
-        
-        g.setColor(Color.red);
-        drawMapWGS84(g, projection);
-        drawReferencePoint(g, projection, OLV);
-        dc1=drawReferencePoint(g, projection, MARTINI);
-
-        projection           =new WebMercatorProjection(5.3872035);
-        g.setColor(Color.blue);
-        drawMapWGS84(g, projection);
-        drawReferencePoint(g, projection, OLV);
-        dc2=drawReferencePoint(g, projection, MARTINI);
-        
-        System.out.println("Diff "+Math.sqrt(Math.pow((dc2.easting-dc1.easting), 2.0)+Math.pow((dc2.northing-dc1.northing), 2.0))+" meter");
+        System.out.println("Mercator vs Web Mercator");
+        projection1           =new MercatorProjection(5.3872035);
+        projection2           =new WebMercatorProjection(5.3872035);
+        compare(g, projection1, polygonsWGS84, OLV_WGS84, MARTINI_WGS84,
+                   projection2, polygonsWGS84, OLV_WGS84, MARTINI_WGS84);
     }
 
     /**
@@ -340,69 +367,59 @@ public class MainView extends javax.swing.JFrame
      * The calculation radius has been chosen as fit parameter
      * @param g Graphics to use
      */
-    private void stereographicVsTransverseMercator(Graphics g)
+    private void stereographicWGS84VsTransverseMercatorWGS84(Graphics g)
     {
-        MapProjection   projection;
-        DatumCoordinate dc1, dc2;
+        MapProjection   projection1, projection2;
 
-        projection           =          new StereographicProjection(Ellipsoid.ELLIPSOID_WGS84, 
-                                        52.1551722, 5.3872035, 
+        System.out.println("Stereographic WGS84 vs Transverse Mercator WGS84");
+        projection1           =new StereographicProjection(Ellipsoid.ELLIPSOID_WGS84, 
                                         0.9999079, 
+                                        52.1551722, 5.3872035, 
                                         6383300, 
                                         0, 0, 
                                         -0.113);
-        
-        calibrate(projection);
-        
-        g.setColor(Color.red);
-        drawReferencePoint(g, projection, OLV);
-        dc1=drawReferencePoint(g, projection, MARTINI);
-        drawMapWGS84(g, projection);
-
-        projection           =new TransverseMercatorProjection(Ellipsoid.ELLIPSOID_WGS84, 
+        projection2           =new TransverseMercatorProjection(Ellipsoid.ELLIPSOID_WGS84, 
                                         0.9999079,
                                         52.1551722, 5.3872035, 
-                                        0, 0);
-        g.setColor(Color.blue);
-        drawReferencePoint(g, projection, OLV);
-        dc2=drawReferencePoint(g, projection, MARTINI);
-        drawMapWGS84(g, projection);
+                                        0, 0);      
+        compare(g, projection1, polygonsWGS84, OLV_WGS84, MARTINI_WGS84, 
+                   projection2, polygonsWGS84, OLV_WGS84, MARTINI_WGS84);
 
-        System.out.println("Diff "+Math.sqrt(Math.pow((dc2.easting-dc1.easting), 2.0)+Math.pow((dc2.northing-dc1.northing), 2.0))+" meter");
     }
 
     /**
      * Compare Rijksdriehoeksmeting to Transverse Mercator
      * @param g 
      */
-    private void rijksdriehoeksmeting(Graphics g)
+    private void stereographicRDVsTransverseMercatorRD(Graphics g)
     {
-        MapProjection   projection;
-        DatumCoordinate dc1, dc2;
-        MapDatumConvert mdc;
-        
-        mdc=new MapDatumConvert();
+        MapProjection   projection1, projection2;
 
-        projection           =          StereographicProjection.RIJKSDRIEHOEKSMETING;
-        calibrate(projection);
-        
-        g.setColor(Color.red);
-        drawReferencePoint(g, projection, mdc.wgs84ToRdLatLon(OLV));
-        dc1=drawReferencePoint(g, projection, mdc.wgs84ToRdLatLon(MARTINI));
-        drawMapRD2(g, projection);
-
-        projection           =TransverseMercatorProjection.OZI_WGS84_TM;
-        g.setColor(Color.blue);
-        drawReferencePoint(g, projection, OLV);
-        dc2=drawReferencePoint(g, projection, MARTINI);
-        drawMapWGS84(g, projection);
-
-        System.out.println("Diff "+
-                           (dc2.easting-dc1.easting)+"/"+(dc2.northing-dc1.northing)+" Total: "+
-                           Math.sqrt(Math.pow((dc2.easting-dc1.easting), 2.0)+Math.pow((dc2.northing-dc1.northing), 2.0))+" meter");
-
-        
+        System.out.println("Stereographic RD vs Transverse Mercator RD");
+        projection1          =StereographicProjection.RIJKSDRIEHOEKSMETING;
+        projection2          =new TransverseMercatorProjection(Ellipsoid.ELLIPSOID_BESSEL1841, 
+                                                               0.9999079  ,
+                                                               OLV_RD.phi, OLV_RD.lambda, 
+                                                               463000.0, 155000.0);
+        compare(g, projection1, polygonsRD, OLV_RD, MARTINI_RD, 
+                   projection2, polygonsRD, OLV_RD, MARTINI_RD);
     }
+
+    /**
+     * Compare Rijksdriehoeksmeting to Transverse Mercator
+     * @param g 
+     */
+    private void stereographicRDVsTransverseMercatorWGS84(Graphics g)
+    {
+        MapProjection   projection1, projection2;
+
+        System.out.println("Stereographic RD vs Transverse Mercator WGS84");
+        projection1          =StereographicProjection.RIJKSDRIEHOEKSMETING;
+        projection2          =TransverseMercatorProjection.OZI_WGS84_TM;
+        compare(g, projection1, polygonsRD, OLV_RD, MARTINI_RD, 
+                   projection2, polygonsWGS84, OLV_WGS84, MARTINI_WGS84);
+    }
+    
     
     /**
      * The paint() method responsible for painting the canvas
@@ -411,11 +428,25 @@ public class MainView extends javax.swing.JFrame
     @Override
     public void paint(Graphics g)
     {
-        rijksdriehoeksmeting(g);
-//        stereographicVsTransverseMercator(g);
-//        mercatorVsWebMercator(g);
+        super.paint(g);
+        g=jPanelMap.getGraphics();
+        switch (test)
+        {
+            case TEST1:
+                mercatorVsWebMercator(g);
+                break;
+            case TEST2:
+                stereographicWGS84VsTransverseMercatorWGS84(g);
+                break;
+            case TEST3:
+                stereographicRDVsTransverseMercatorWGS84(g);
+                break;
+            case TEST4:
+                stereographicRDVsTransverseMercatorRD(g);
+                break;
+        }
     }
-    
+
     
     /**
      * This method is called from within the constructor to initialize the form.
@@ -427,23 +458,142 @@ public class MainView extends javax.swing.JFrame
     private void initComponents()
     {
 
+        jPanelMap = new javax.swing.JPanel();
+        jMenuBar1 = new javax.swing.JMenuBar();
+        jMenu1 = new javax.swing.JMenu();
+        jMenuItemExit = new javax.swing.JMenuItem();
+        jMenuShow = new javax.swing.JMenu();
+        jMenuItemCompare1 = new javax.swing.JMenuItem();
+        jMenuItemCompare2 = new javax.swing.JMenuItem();
+        jMenuItemCompare3 = new javax.swing.JMenuItem();
+        jMenuItemCompare4 = new javax.swing.JMenuItem();
+
         setDefaultCloseOperation(javax.swing.WindowConstants.EXIT_ON_CLOSE);
+
+        javax.swing.GroupLayout jPanelMapLayout = new javax.swing.GroupLayout(jPanelMap);
+        jPanelMap.setLayout(jPanelMapLayout);
+        jPanelMapLayout.setHorizontalGroup(
+            jPanelMapLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+            .addGap(0, 800, Short.MAX_VALUE)
+        );
+        jPanelMapLayout.setVerticalGroup(
+            jPanelMapLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+            .addGap(0, 779, Short.MAX_VALUE)
+        );
+
+        jMenu1.setText("File");
+
+        jMenuItemExit.setText("Exit");
+        jMenuItemExit.addActionListener(new java.awt.event.ActionListener()
+        {
+            public void actionPerformed(java.awt.event.ActionEvent evt)
+            {
+                jMenuItemExitActionPerformed(evt);
+            }
+        });
+        jMenu1.add(jMenuItemExit);
+
+        jMenuBar1.add(jMenu1);
+
+        jMenuShow.setText("Show");
+
+        jMenuItemCompare1.setText("Mercator vs Web Mercator");
+        jMenuItemCompare1.addActionListener(new java.awt.event.ActionListener()
+        {
+            public void actionPerformed(java.awt.event.ActionEvent evt)
+            {
+                jMenuItemCompare1ActionPerformed(evt);
+            }
+        });
+        jMenuShow.add(jMenuItemCompare1);
+
+        jMenuItemCompare2.setText("Stereographic WGS84 vs Transverse Mercator WGS84");
+        jMenuItemCompare2.addActionListener(new java.awt.event.ActionListener()
+        {
+            public void actionPerformed(java.awt.event.ActionEvent evt)
+            {
+                jMenuItemCompare2ActionPerformed(evt);
+            }
+        });
+        jMenuShow.add(jMenuItemCompare2);
+
+        jMenuItemCompare3.setText("Stereographic RD vs Transverse Mercator WGS84");
+        jMenuItemCompare3.addActionListener(new java.awt.event.ActionListener()
+        {
+            public void actionPerformed(java.awt.event.ActionEvent evt)
+            {
+                jMenuItemCompare3ActionPerformed(evt);
+            }
+        });
+        jMenuShow.add(jMenuItemCompare3);
+
+        jMenuItemCompare4.setText("Stereographic RD vs Transverse Mercator RD");
+        jMenuItemCompare4.addActionListener(new java.awt.event.ActionListener()
+        {
+            public void actionPerformed(java.awt.event.ActionEvent evt)
+            {
+                jMenuItemCompare4ActionPerformed(evt);
+            }
+        });
+        jMenuShow.add(jMenuItemCompare4);
+
+        jMenuBar1.add(jMenuShow);
+
+        setJMenuBar(jMenuBar1);
 
         javax.swing.GroupLayout layout = new javax.swing.GroupLayout(getContentPane());
         getContentPane().setLayout(layout);
         layout.setHorizontalGroup(
             layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addGap(0, 1200, Short.MAX_VALUE)
+            .addComponent(jPanelMap, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
         );
         layout.setVerticalGroup(
             layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addGap(0, 800, Short.MAX_VALUE)
+            .addComponent(jPanelMap, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
         );
 
         pack();
     }// </editor-fold>//GEN-END:initComponents
 
+    private void jMenuItemCompare1ActionPerformed(java.awt.event.ActionEvent evt)//GEN-FIRST:event_jMenuItemCompare1ActionPerformed
+    {//GEN-HEADEREND:event_jMenuItemCompare1ActionPerformed
+        test=TestType.TEST1;
+        this.repaint();
+    }//GEN-LAST:event_jMenuItemCompare1ActionPerformed
+
+    private void jMenuItemExitActionPerformed(java.awt.event.ActionEvent evt)//GEN-FIRST:event_jMenuItemExitActionPerformed
+    {//GEN-HEADEREND:event_jMenuItemExitActionPerformed
+        System.exit(0);
+    }//GEN-LAST:event_jMenuItemExitActionPerformed
+
+    private void jMenuItemCompare2ActionPerformed(java.awt.event.ActionEvent evt)//GEN-FIRST:event_jMenuItemCompare2ActionPerformed
+    {//GEN-HEADEREND:event_jMenuItemCompare2ActionPerformed
+        test=TestType.TEST2;
+        this.repaint();
+    }//GEN-LAST:event_jMenuItemCompare2ActionPerformed
+
+    private void jMenuItemCompare3ActionPerformed(java.awt.event.ActionEvent evt)//GEN-FIRST:event_jMenuItemCompare3ActionPerformed
+    {//GEN-HEADEREND:event_jMenuItemCompare3ActionPerformed
+        test=TestType.TEST3;
+        this.repaint();
+    }//GEN-LAST:event_jMenuItemCompare3ActionPerformed
+
+    private void jMenuItemCompare4ActionPerformed(java.awt.event.ActionEvent evt)//GEN-FIRST:event_jMenuItemCompare4ActionPerformed
+    {//GEN-HEADEREND:event_jMenuItemCompare4ActionPerformed
+        test=TestType.TEST4;
+        this.repaint();
+    }//GEN-LAST:event_jMenuItemCompare4ActionPerformed
+
 
     // Variables declaration - do not modify//GEN-BEGIN:variables
+    private javax.swing.JMenu jMenu1;
+    private javax.swing.JMenuBar jMenuBar1;
+    private javax.swing.JMenuItem jMenuItemCompare1;
+    private javax.swing.JMenuItem jMenuItemCompare2;
+    private javax.swing.JMenuItem jMenuItemCompare3;
+    private javax.swing.JMenuItem jMenuItemCompare4;
+    private javax.swing.JMenuItem jMenuItemExit;
+    private javax.swing.JMenu jMenuShow;
+    private javax.swing.JPanel jPanelMap;
     // End of variables declaration//GEN-END:variables
 }

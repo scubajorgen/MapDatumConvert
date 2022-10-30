@@ -5,10 +5,8 @@
  */
 package net.studioblueplanet.mapdatumconvert;
 
-import org.jdesktop.application.Application;
 import org.jdesktop.application.SingleFrameApplication;
-import org.jdesktop.application.ResourceMap;
-import org.jdesktop.application.ApplicationContext;
+
 /**
  *
  * @author jorgen
@@ -51,115 +49,6 @@ public class Main extends SingleFrameApplication
         System.out.println("_________________________________________________________________________________");
     }
     
-    private static void projectionCompare()
-    {
-        MapDatumConvert     mdc;
-        LatLonCoordinate    rdLatLon;
-        LatLonCoordinate    wgsLatLon;
-
-        mdc                 =new MapDatumConvert();        
-        
-        System.out.println("Comparison of Transverse Mercator projection to RD projection");
-        System.out.println("Projection Center: OLV Amersfoort");
-        System.out.println("Target           : OLV Amersfoort");
-        // OLV Amersfoort, WGS84, Transverse mercator
-        // The official RD lat/lon coordinate of OLV Amersfoort
-        rdLatLon                        = new LatLonCoordinate();
-        rdLatLon.phi                    =52.156160556;
-        rdLatLon.lambda                 =5.387638889;
-        rdLatLon.h                      =0.0;
-        
-        // As WGS84 lat/lon
-        wgsLatLon=mdc.rdLatLonToWgs84(rdLatLon);
-        
-        TransverseMercatorProjection tm = TransverseMercatorProjection.OZI_WGS84_TM;
-        DatumCoordinate result          = tm.latLonToMapDatum(wgsLatLon);
-        System.out.println(String.format("Transverse Mercator: [%10.7f, %10.7f] to [%8.3f, %8.3f]",
-                           wgsLatLon.phi, wgsLatLon.lambda,
-                           result.easting, result.northing));      
-        
-        // OLV Amersfoort, Bessel1841, Stereographic
-        StereographicProjection sp      =StereographicProjection.RIJKSDRIEHOEKSMETING;
-        DatumCoordinate dc              = sp.latLonToMapDatum(rdLatLon);
-        System.out.println(String.format("Stereographic      : [%10.7f, %10.7f] to [%8.3f, %8.3f]",
-                           rdLatLon.phi, rdLatLon.lambda,
-                           dc.easting, dc.northing));      
-        
-        System.out.println(String.format("Difference         : Easting %3.1f m, Northing %3.1f m", result.easting-dc.easting, 
-                                                                       result.northing-dc.northing));        
-
-        System.out.println("Target           : Martini Toren Groningen");
-        // Martinitoren Groningen, Transverse mercator
-        wgsLatLon                       = new LatLonCoordinate();
-        wgsLatLon.phi                   =53.2193683;
-        wgsLatLon.lambda                = 6.5682700;
-        wgsLatLon.h                     = 0.0;
-        rdLatLon                        =mdc.wgs84ToRdLatLon(wgsLatLon);
-
-        result                          = tm.latLonToMapDatum(wgsLatLon);
-        System.out.println(String.format("Transverse Mercator: [%10.7f, %10.7f] to [%8.3f, %8.3f]",
-                           wgsLatLon.phi, wgsLatLon.lambda,
-                           result.easting, result.northing));      
-        
-        // Martinitoren Groningen, Bessel1841, Stereographic
-        sp                              =StereographicProjection.RIJKSDRIEHOEKSMETING;
-        dc                              = sp.latLonToMapDatum(rdLatLon);
-        System.out.println(String.format("Stereographic      : [%10.7f, %10.7f] to [%8.3f, %8.3f]",
-                           rdLatLon.phi, rdLatLon.lambda,
-                           dc.easting, dc.northing));      
-        
-        System.out.println(String.format("Difference         : Easting %3.1f m, Northing %3.1f m", 
-                                                        result.easting-dc.easting, 
-                                                        result.northing-dc.northing));        
-        System.out.println("_________________________________________________________________________________");
-    }
-
-    private static void oziSimulation()
-    {
-        MapDatumConvert                 mdc;
-        LatLonCoordinate                rdLatLon;
-        LatLonCoordinate                wgsLatLon;
-        DatumCoordinate                 dcTm;
-        DatumCoordinate                 dcOs;
-        TransverseMercatorProjection    rdTm;
-        StereographicProjection         rdOs;
-
-        mdc                 =new MapDatumConvert();        
-        
-        System.out.println("Simulation of the Ozi RD approximation");
-        System.out.println("Projection Center: OLV Amersfoort");
-        System.out.println("Target           : Martinitoren Groningen");
-
-        // Martinitoren Groningen, Transverse mercator
-        wgsLatLon                        = new LatLonCoordinate();
-        wgsLatLon.phi                    =53.2193683;
-        wgsLatLon.lambda                 = 6.5682700;
-        wgsLatLon.h                      = 0.0;
-        rdLatLon                         =mdc.wgs84ToRdLatLon(wgsLatLon);
-          
-        // Instead of a Oblique Stereographic we use the Transverse Mercator projection
-        rdTm=new TransverseMercatorProjection(Ellipsoid.ELLIPSOID_BESSEL1841, 
-                                                 0.9999079, 
-                                                 52.156160556, 5.387638889,
-                                                 463000.0, 155000.0);
-        dcTm=rdTm.latLonToMapDatum(rdLatLon);
-        System.out.println(String.format("Transverse Mercator   : WGS84 [%10.7f, %10.7f] to RD [%10.7f, %10.7f] to [%8.3f, %8.3f]",
-                           wgsLatLon.phi, wgsLatLon.lambda,
-                           rdLatLon.phi, rdLatLon.lambda,
-                           dcTm.easting  , dcTm.northing));     
-        rdOs=StereographicProjection.RIJKSDRIEHOEKSMETING;
-        dcOs=rdOs.latLonToMapDatum(rdLatLon);
-        System.out.println(String.format("Oblique Stereographic : WGS84 [%10.7f, %10.7f] to RD [%10.7f, %10.7f] to [%8.3f, %8.3f]",
-                           wgsLatLon.phi, wgsLatLon.lambda,
-                           rdLatLon.phi, rdLatLon.lambda,
-                           dcOs.easting  , dcOs.northing));     
-        
-        System.out.println(String.format("Difference         : Easting %3.1f m, Northing %3.1f m", 
-                                                        dcTm.easting-dcOs.easting, 
-                                                        dcTm.northing-dcOs.northing));        
-        System.out.println("_________________________________________________________________________________");        
-    }
-
 
     
     public static void main(String args[])
@@ -171,9 +60,5 @@ public class Main extends SingleFrameApplication
         System.out.println("_________________________________________________________________________________");
 
         rdWgsRoundTrip();
-        
-        projectionCompare();
-        
-        oziSimulation();
     }    
 }
