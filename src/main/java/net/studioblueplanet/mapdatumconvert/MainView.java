@@ -36,7 +36,7 @@ public class MainView extends javax.swing.JFrame
         List<LatLonCoordinate> coordinates=new ArrayList<>();
     }
     
-    public enum TestType {TEST1, TEST2, TEST3, TEST4, TEST5};
+    public enum TestType {TEST1, TEST2, TEST3, TEST4, TEST5, TEST6};
     
     public enum DatumType {DATUMTYPE_RD, DATUMTYPE_WGS84};
     
@@ -71,7 +71,9 @@ public class MainView extends javax.swing.JFrame
     private                 int                 topLeftY;
     private                 int                 bottomRightX;
     private                 int                 bottomRightY;
-    private                 double              meterPerPixel;
+    private                 double              meterPerPixelX;     // scaling for fit, X direction
+    private                 double              meterPerPixelY;     // scaling for fit, Y direction
+    private                 double              meterPerPixel;      
     
     private final           List<PolygonLatLon> polygonsWGS84       =new ArrayList<>();    
     private final           List<PolygonLatLon> polygonsRD          =new ArrayList<>();    
@@ -255,10 +257,10 @@ public class MainView extends javax.swing.JFrame
             {
                 c   =p.coordinates.get(i);
                 d   =projection.latLonToMapDatum(c);
-                x1  =topLeftX+((d.easting-topLeft.easting)/meterPerPixel+0.5);
-                y1  =topLeftY+((topLeft.northing-d.northing)/meterPerPixel+0.5);
-                x2  =topLeftX+((prevD.easting-topLeft.easting)/meterPerPixel+0.5);
-                y2  =topLeftY+((topLeft.northing-prevD.northing)/meterPerPixel+0.5);
+                x1  =topLeftX+((d.easting-topLeft.easting)/meterPerPixelX+0.5);
+                y1  =topLeftY+((topLeft.northing-d.northing)/meterPerPixelY+0.5);
+                x2  =topLeftX+((prevD.easting-topLeft.easting)/meterPerPixelX+0.5);
+                y2  =topLeftY+((topLeft.northing-prevD.northing)/meterPerPixelY+0.5);
                 g.drawLine((int)x1, (int)y1, (int)x2, (int)y2);
                 prevD=d;
             }
@@ -279,8 +281,8 @@ public class MainView extends javax.swing.JFrame
 
         
         dc=projection.latLonToMapDatum(llc);
-        x=topLeftX+(dc.easting -topLeft.easting )/meterPerPixel+0.5; // Add 0.5 for proper rounding
-        y=topLeftY+(topLeft.northing-dc.northing)/meterPerPixel+0.5;
+        x=topLeftX+(dc.easting -topLeft.easting )/meterPerPixelX+0.5; // Add 0.5 for proper rounding
+        y=topLeftY+(topLeft.northing-dc.northing)/meterPerPixelY+0.5;
         g.fillOval((int)x-5, (int)y-5, 10, 10);    
 
         System.out.println(String.format("%s E/N: %8.1f/%8.1f", name, dc.easting, dc.northing));
@@ -295,8 +297,6 @@ public class MainView extends javax.swing.JFrame
     private void calibrate(MapProjection projection, DatumType type)
     {
         Dimension d;
-        double          dxPixel;
-        double          dyPixel;
         
         d           =this.jPanelMap.getSize();
         topLeftX    =MARGIN;
@@ -313,9 +313,14 @@ public class MainView extends javax.swing.JFrame
             topLeft     =projection.latLonToMapDatum(TOPLEFT_WGS84);
             bottomRight =projection.latLonToMapDatum(BOTTOMRIGHT_WGS84);
         }
-        dxPixel=(bottomRight.easting-topLeft.easting     )/(bottomRightX-topLeftX);
-        dyPixel=(topLeft.northing   -bottomRight.northing)/(bottomRightY-topLeftY);
-        meterPerPixel=Math.max(dxPixel, dyPixel);
+        meterPerPixelX  =(bottomRight.easting-topLeft.easting     )/(bottomRightX-topLeftX);
+        meterPerPixelY  =(topLeft.northing   -bottomRight.northing)/(bottomRightY-topLeftY);
+        meterPerPixel   =Math.max(meterPerPixelX, meterPerPixelY);
+        if (jCheckBoxMenuItemXYScale.isSelected())
+        {
+            meterPerPixelX=meterPerPixel;
+            meterPerPixelY=meterPerPixel;
+        }
     }
 
     /**
@@ -437,6 +442,20 @@ public class MainView extends javax.swing.JFrame
     }
 
     /**
+     * Comparison between mercator and Web mercator
+     * @param g Graphics to use
+     */
+    private void mercatorVsTransverseMercator(Graphics g)
+    {
+        MapProjection   projection1, projection2;
+        
+        System.out.println("Mercator vs Transverse Mercator - fit");
+        projection1           =new MercatorProjection(5.3872035);
+        projection2           =TransverseMercatorProjection.OZI_WGS84_TM;
+        compare(g, projection1, DatumType.DATUMTYPE_WGS84, projection2, DatumType.DATUMTYPE_WGS84, true);
+    }
+
+    /**
      * Comparison between Stereographic and Transverse Mercator.
      * The calculation radius has been chosen as fit parameter
      * @param g Graphics to use
@@ -518,6 +537,9 @@ public class MainView extends javax.swing.JFrame
             case TEST5:
                 mercatorVsWebMercator(g, true);
                 break;
+            case TEST6:
+                mercatorVsTransverseMercator(g);
+                break;
         }
     }
 
@@ -532,6 +554,9 @@ public class MainView extends javax.swing.JFrame
     private void initComponents()
     {
 
+        jMenuItem1 = new javax.swing.JMenuItem();
+        jMenuItem2 = new javax.swing.JMenuItem();
+        jCheckBoxMenuItem1 = new javax.swing.JCheckBoxMenuItem();
         jPanelMap = new javax.swing.JPanel();
         jMenuBar1 = new javax.swing.JMenuBar();
         jMenu1 = new javax.swing.JMenu();
@@ -542,6 +567,16 @@ public class MainView extends javax.swing.JFrame
         jMenuItemCompare2 = new javax.swing.JMenuItem();
         jMenuItemCompare3 = new javax.swing.JMenuItem();
         jMenuItemCompare4 = new javax.swing.JMenuItem();
+        jMenuItemCompare6 = new javax.swing.JMenuItem();
+        jMenu2 = new javax.swing.JMenu();
+        jCheckBoxMenuItemXYScale = new javax.swing.JCheckBoxMenuItem();
+
+        jMenuItem1.setText("jMenuItem1");
+
+        jMenuItem2.setText("jMenuItem2");
+
+        jCheckBoxMenuItem1.setSelected(true);
+        jCheckBoxMenuItem1.setText("jCheckBoxMenuItem1");
 
         setDefaultCloseOperation(javax.swing.WindowConstants.EXIT_ON_CLOSE);
 
@@ -622,7 +657,32 @@ public class MainView extends javax.swing.JFrame
         });
         jMenuShow.add(jMenuItemCompare4);
 
+        jMenuItemCompare6.setText("Mercator WGS84 vs Transverse Mercator WGS84 - Fit");
+        jMenuItemCompare6.addActionListener(new java.awt.event.ActionListener()
+        {
+            public void actionPerformed(java.awt.event.ActionEvent evt)
+            {
+                jMenuItemCompare6ActionPerformed(evt);
+            }
+        });
+        jMenuShow.add(jMenuItemCompare6);
+
         jMenuBar1.add(jMenuShow);
+
+        jMenu2.setText("Options");
+
+        jCheckBoxMenuItemXYScale.setSelected(true);
+        jCheckBoxMenuItemXYScale.setText("Equal x and y scale");
+        jCheckBoxMenuItemXYScale.addActionListener(new java.awt.event.ActionListener()
+        {
+            public void actionPerformed(java.awt.event.ActionEvent evt)
+            {
+                jCheckBoxMenuItemXYScaleActionPerformed(evt);
+            }
+        });
+        jMenu2.add(jCheckBoxMenuItemXYScale);
+
+        jMenuBar1.add(jMenu2);
 
         setJMenuBar(jMenuBar1);
 
@@ -675,15 +735,32 @@ public class MainView extends javax.swing.JFrame
         this.repaint();
     }//GEN-LAST:event_jMenuItemCompare5ActionPerformed
 
+    private void jMenuItemCompare6ActionPerformed(java.awt.event.ActionEvent evt)//GEN-FIRST:event_jMenuItemCompare6ActionPerformed
+    {//GEN-HEADEREND:event_jMenuItemCompare6ActionPerformed
+        test=TestType.TEST6;
+        this.repaint();
+    }//GEN-LAST:event_jMenuItemCompare6ActionPerformed
+
+    private void jCheckBoxMenuItemXYScaleActionPerformed(java.awt.event.ActionEvent evt)//GEN-FIRST:event_jCheckBoxMenuItemXYScaleActionPerformed
+    {//GEN-HEADEREND:event_jCheckBoxMenuItemXYScaleActionPerformed
+        this.repaint();
+    }//GEN-LAST:event_jCheckBoxMenuItemXYScaleActionPerformed
+
 
     // Variables declaration - do not modify//GEN-BEGIN:variables
+    private javax.swing.JCheckBoxMenuItem jCheckBoxMenuItem1;
+    private javax.swing.JCheckBoxMenuItem jCheckBoxMenuItemXYScale;
     private javax.swing.JMenu jMenu1;
+    private javax.swing.JMenu jMenu2;
     private javax.swing.JMenuBar jMenuBar1;
+    private javax.swing.JMenuItem jMenuItem1;
+    private javax.swing.JMenuItem jMenuItem2;
     private javax.swing.JMenuItem jMenuItemCompare1;
     private javax.swing.JMenuItem jMenuItemCompare2;
     private javax.swing.JMenuItem jMenuItemCompare3;
     private javax.swing.JMenuItem jMenuItemCompare4;
     private javax.swing.JMenuItem jMenuItemCompare5;
+    private javax.swing.JMenuItem jMenuItemCompare6;
     private javax.swing.JMenuItem jMenuItemExit;
     private javax.swing.JMenu jMenuShow;
     private javax.swing.JPanel jPanelMap;
