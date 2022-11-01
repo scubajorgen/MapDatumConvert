@@ -9,7 +9,6 @@ import java.awt.Color;
 import java.awt.Dimension;
 import java.awt.Graphics;
 import java.io.BufferedReader;
-import java.io.FileReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.net.HttpURLConnection;
@@ -37,7 +36,7 @@ public class MainView extends javax.swing.JFrame
         List<LatLonCoordinate> coordinates=new ArrayList<>();
     }
     
-    public enum TestType {TEST1, TEST2, TEST3, TEST4};
+    public enum TestType {TEST1, TEST2, TEST3, TEST4, TEST5};
     
     public enum DatumType {DATUMTYPE_RD, DATUMTYPE_WGS84};
     
@@ -74,10 +73,10 @@ public class MainView extends javax.swing.JFrame
     private                 int                 bottomRightY;
     private                 double              meterPerPixel;
     
-    private final           List<PolygonLatLon> polygonsWGS84   =new ArrayList<>();    
-    private final           List<PolygonLatLon> polygonsRD      =new ArrayList<>();    
+    private final           List<PolygonLatLon> polygonsWGS84       =new ArrayList<>();    
+    private final           List<PolygonLatLon> polygonsRD          =new ArrayList<>();    
     
-    private                 TestType            test            =TestType.TEST1;
+    private                 TestType            test                =TestType.TEST1;
    
     /**
      * Creates new form MainView
@@ -256,10 +255,10 @@ public class MainView extends javax.swing.JFrame
             {
                 c   =p.coordinates.get(i);
                 d   =projection.latLonToMapDatum(c);
-                x1  =topLeftX+(d.easting-topLeft.easting)/meterPerPixel;
-                y1  =topLeftY+(topLeft.northing-d.northing)/meterPerPixel;
-                x2  =topLeftX+(prevD.easting-topLeft.easting)/meterPerPixel;
-                y2  =topLeftY+(topLeft.northing-prevD.northing)/meterPerPixel;
+                x1  =topLeftX+((d.easting-topLeft.easting)/meterPerPixel+0.5);
+                y1  =topLeftY+((topLeft.northing-d.northing)/meterPerPixel+0.5);
+                x2  =topLeftX+((prevD.easting-topLeft.easting)/meterPerPixel+0.5);
+                y2  =topLeftY+((topLeft.northing-prevD.northing)/meterPerPixel+0.5);
                 g.drawLine((int)x1, (int)y1, (int)x2, (int)y2);
                 prevD=d;
             }
@@ -280,8 +279,8 @@ public class MainView extends javax.swing.JFrame
 
         
         dc=projection.latLonToMapDatum(llc);
-        x=topLeftX+(dc.easting -topLeft.easting )/meterPerPixel;
-        y=topLeftY+(topLeft.northing-dc.northing)/meterPerPixel;
+        x=topLeftX+(dc.easting -topLeft.easting )/meterPerPixel+0.5; // Add 0.5 for proper rounding
+        y=topLeftY+(topLeft.northing-dc.northing)/meterPerPixel+0.5;
         g.fillOval((int)x-5, (int)y-5, 10, 10);    
 
         System.out.println(String.format("%s E/N: %8.1f/%8.1f", name, dc.easting, dc.northing));
@@ -332,20 +331,22 @@ public class MainView extends javax.swing.JFrame
     }
     
     /**
-     * Execute a comparison. The map area is calibrated based on projection p1
+     * Execute a comparison between two projections. 
+     * The map area is calibrated based on projection p1
      * @param g Graphics to use
      * @param p1 1st projection
      * @param type1 Datum type to use with projection 1
      * @param p2 2nd projection
      * @param type2 Datum type to use with projection 2
      */
-    private void compare(Graphics g, MapProjection p1, DatumType type1, MapProjection p2, DatumType type2)
+    private void compare(Graphics g, MapProjection p1, DatumType type1, MapProjection p2, DatumType type2, boolean fitProjections)
     {
         List<PolygonLatLon> map1, map2;
-        DatumCoordinate     dc1, dc2;
-        LatLonCoordinate    center1, center2;
-        LatLonCoordinate    reference1, reference2;
-        LatLonCoordinate    tl1, tl2, br1, br2;
+        DatumCoordinate     dc1, dc2;               // Map datum of the center
+        DatumCoordinate     dr1, dr2;               // Map datum of the reference point
+        LatLonCoordinate    center1, center2;       // Center lat lon
+        LatLonCoordinate    reference1, reference2; // Reference lat lon
+        LatLonCoordinate    tl1, tl2, br1, br2;     // top-left and bottom-right lat lon
         
         if (type1==DatumType.DATUMTYPE_RD)
         {
@@ -387,24 +388,36 @@ public class MainView extends javax.swing.JFrame
         g.clearRect(topLeftX, topLeftY, bottomRightX-topLeftX, bottomRightX-topLeftX);
         g.setColor(Color.red);
         drawMap(g, map1, p1);
-        drawReferencePoint(g, p1, center1, "OLV     ");
-        dc1=drawReferencePoint(g, p1, reference1, "MARTINI ");
-        drawReferencePoint(g, p1, tl1, "Top left");
+        dc1=drawReferencePoint(g, p1, center1, "OLV         ");
+        dr1=drawReferencePoint(g, p1, reference1, "MARTINI     ");
+        drawReferencePoint(g, p1, tl1, "Top left    ");
         drawReferencePoint(g, p1, br1, "Bottom Right");
-        drawReferencePoint(g, p1, new LatLonCoordinate(tl1.phi, br1.lambda), "Top Right");
-        drawReferencePoint(g, p1, new LatLonCoordinate(br1.phi, tl1.lambda), "Bottom Left");
+        drawReferencePoint(g, p1, new LatLonCoordinate(tl1.phi, br1.lambda), "Top Right   ");
+        drawReferencePoint(g, p1, new LatLonCoordinate(br1.phi, tl1.lambda), "Bottom Left ");
 
+        if (fitProjections)
+        {
+            calibrate(p2, type2);
+        }
+        
         System.out.println(p2.getClass().toString());
         g.setColor(Color.blue);
         drawMap(g, map2, p2);
-        drawReferencePoint(g, p2, center2, "OLV     ");
-        dc2=drawReferencePoint(g, p2, reference2, "MARTINI ");
-        drawReferencePoint(g, p2, tl2, "Top left");
+        dc2=drawReferencePoint(g, p2, center2, "OLV         ");
+        dr2=drawReferencePoint(g, p2, reference2, "MARTINI     ");
+        drawReferencePoint(g, p2, tl2, "Top left    ");
         drawReferencePoint(g, p2, br2, "Bottom Right");
-        drawReferencePoint(g, p2, new LatLonCoordinate(tl2.phi, br2.lambda), "Top Right");
-        drawReferencePoint(g, p2, new LatLonCoordinate(br2.phi, tl2.lambda), "Bottom Left");
+        drawReferencePoint(g, p2, new LatLonCoordinate(tl2.phi, br2.lambda), "Top Right   ");
+        drawReferencePoint(g, p2, new LatLonCoordinate(br2.phi, tl2.lambda), "Bottom Left ");
         
-        report(dc1, dc2);        
+        System.out.println("Distance OLV-Martini Projection 1:");
+        report(dc1, dr1);
+        System.out.println("Distance OLV-Martini Projection 2:");
+        report(dc2, dr2);
+        System.out.println("Distance OLV between Projection 1 and Projection 2:");
+        report(dc1, dc2);
+        System.out.println("Distance MARTINI between Projection 1 and Projection 2:");
+        report(dr1, dr2);
     }
             
     
@@ -413,14 +426,14 @@ public class MainView extends javax.swing.JFrame
      * Comparison between mercator and Web mercator
      * @param g Graphics to use
      */
-    private void mercatorVsWebMercator(Graphics g)
+    private void mercatorVsWebMercator(Graphics g, boolean fit)
     {
         MapProjection   projection1, projection2;
         
         System.out.println("Mercator vs Web Mercator");
         projection1           =new MercatorProjection(5.3872035);
         projection2           =new WebMercatorProjection(5.3872035);
-        compare(g, projection1, DatumType.DATUMTYPE_WGS84, projection2, DatumType.DATUMTYPE_WGS84);
+        compare(g, projection1, DatumType.DATUMTYPE_WGS84, projection2, DatumType.DATUMTYPE_WGS84, fit);
     }
 
     /**
@@ -443,7 +456,7 @@ public class MainView extends javax.swing.JFrame
                                         0.9999079,
                                         52.1551722, 5.3872035, 
                                         0, 0);      
-        compare(g, projection1, DatumType.DATUMTYPE_WGS84, projection2, DatumType.DATUMTYPE_WGS84);
+        compare(g, projection1, DatumType.DATUMTYPE_WGS84, projection2, DatumType.DATUMTYPE_WGS84, false);
 
     }
 
@@ -461,7 +474,7 @@ public class MainView extends javax.swing.JFrame
                                                                0.9999079  ,
                                                                OLV_RD.phi, OLV_RD.lambda, 
                                                                463000.0, 155000.0);
-        compare(g, projection1, DatumType.DATUMTYPE_RD, projection2, DatumType.DATUMTYPE_RD);
+        compare(g, projection1, DatumType.DATUMTYPE_RD, projection2, DatumType.DATUMTYPE_RD, false);
     }
 
     /**
@@ -475,7 +488,7 @@ public class MainView extends javax.swing.JFrame
         System.out.println("Stereographic RD vs Transverse Mercator WGS84");
         projection1          =StereographicProjection.RIJKSDRIEHOEKSMETING;
         projection2          =TransverseMercatorProjection.OZI_WGS84_TM;
-        compare(g, projection1, DatumType.DATUMTYPE_RD, projection2, DatumType.DATUMTYPE_WGS84);
+        compare(g, projection1, DatumType.DATUMTYPE_RD, projection2, DatumType.DATUMTYPE_WGS84, false);
     }
     
     
@@ -491,7 +504,7 @@ public class MainView extends javax.swing.JFrame
         switch (test)
         {
             case TEST1:
-                mercatorVsWebMercator(g);
+                mercatorVsWebMercator(g, false);
                 break;
             case TEST2:
                 stereographicWGS84VsTransverseMercatorWGS84(g);
@@ -501,6 +514,9 @@ public class MainView extends javax.swing.JFrame
                 break;
             case TEST4:
                 stereographicRDVsTransverseMercatorRD(g);
+                break;
+            case TEST5:
+                mercatorVsWebMercator(g, true);
                 break;
         }
     }
@@ -522,6 +538,7 @@ public class MainView extends javax.swing.JFrame
         jMenuItemExit = new javax.swing.JMenuItem();
         jMenuShow = new javax.swing.JMenu();
         jMenuItemCompare1 = new javax.swing.JMenuItem();
+        jMenuItemCompare5 = new javax.swing.JMenuItem();
         jMenuItemCompare2 = new javax.swing.JMenuItem();
         jMenuItemCompare3 = new javax.swing.JMenuItem();
         jMenuItemCompare4 = new javax.swing.JMenuItem();
@@ -532,7 +549,7 @@ public class MainView extends javax.swing.JFrame
         jPanelMap.setLayout(jPanelMapLayout);
         jPanelMapLayout.setHorizontalGroup(
             jPanelMapLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addGap(0, 800, Short.MAX_VALUE)
+            .addGap(0, 665, Short.MAX_VALUE)
         );
         jPanelMapLayout.setVerticalGroup(
             jPanelMapLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
@@ -564,6 +581,16 @@ public class MainView extends javax.swing.JFrame
             }
         });
         jMenuShow.add(jMenuItemCompare1);
+
+        jMenuItemCompare5.setText("Mercator vs Web Mercator - Fit");
+        jMenuItemCompare5.addActionListener(new java.awt.event.ActionListener()
+        {
+            public void actionPerformed(java.awt.event.ActionEvent evt)
+            {
+                jMenuItemCompare5ActionPerformed(evt);
+            }
+        });
+        jMenuShow.add(jMenuItemCompare5);
 
         jMenuItemCompare2.setText("Stereographic WGS84 vs Transverse Mercator WGS84");
         jMenuItemCompare2.addActionListener(new java.awt.event.ActionListener()
@@ -642,6 +669,12 @@ public class MainView extends javax.swing.JFrame
         this.repaint();
     }//GEN-LAST:event_jMenuItemCompare4ActionPerformed
 
+    private void jMenuItemCompare5ActionPerformed(java.awt.event.ActionEvent evt)//GEN-FIRST:event_jMenuItemCompare5ActionPerformed
+    {//GEN-HEADEREND:event_jMenuItemCompare5ActionPerformed
+        test=TestType.TEST5;
+        this.repaint();
+    }//GEN-LAST:event_jMenuItemCompare5ActionPerformed
+
 
     // Variables declaration - do not modify//GEN-BEGIN:variables
     private javax.swing.JMenu jMenu1;
@@ -650,6 +683,7 @@ public class MainView extends javax.swing.JFrame
     private javax.swing.JMenuItem jMenuItemCompare2;
     private javax.swing.JMenuItem jMenuItemCompare3;
     private javax.swing.JMenuItem jMenuItemCompare4;
+    private javax.swing.JMenuItem jMenuItemCompare5;
     private javax.swing.JMenuItem jMenuItemExit;
     private javax.swing.JMenu jMenuShow;
     private javax.swing.JPanel jPanelMap;
