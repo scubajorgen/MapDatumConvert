@@ -72,7 +72,15 @@ public class TransverseMercatorTest
         lon= 0.0+1/60.0*(30.0+0.0/60.0);
         tm=instance.latLonToMapDatum(new LatLonCoordinate(lat, lon));
         assertEquals(69740.50, tm.northing, 0.01);
-        assertEquals(577274.99, tm.easting, 0.01);    
+        assertEquals(577274.99, tm.easting, 0.01);   
+        
+        instance=TransverseMercatorProjection.UTM31N;
+        // OLV
+        lat=52.1551722;
+        lon= 5.3872035;
+        tm=instance.latLonToMapDatum(new LatLonCoordinate(lat, lon));
+        assertEquals(5780984.4, tm.northing, 1);
+        assertEquals( 663303.9, tm.easting , 1);        
     }
 
 

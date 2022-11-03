@@ -22,6 +22,7 @@ public class Ellipsoid
     public final static Ellipsoid ELLIPSOID_WGS84       =new Ellipsoid(6378137.000, 6356752.315         , null);        
     public final static Ellipsoid ELLIPSOID_GRS80       =new Ellipsoid(6378137.000, 6356752.314140347   , null);        
     public final static Ellipsoid ELLIPSOID_BESSEL1841  =new Ellipsoid(6377397.155, null                , 1.0/ 299.15281285);        
+    public final static Ellipsoid ELLIPSOID_INT1924     =new Ellipsoid(6378388.000, null                , 1.0/ 297.0);        
         
     /**
      * Constructor. The radius a must be specified. At least one of b or f 
