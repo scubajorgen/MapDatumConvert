@@ -53,20 +53,25 @@ public class MainView extends javax.swing.JFrame
     private static final    LatLonCoordinate    MARTINI_WGS84       =new LatLonCoordinate(53.2193683, 6.56827);
     private static          LatLonCoordinate    MARTINI_RD;
 
-    // OLV Amersfoort
+    // OLV Amersfoort aka. center of the map
     private static final    LatLonCoordinate    OLV_WGS84           =new LatLonCoordinate(52.1551722, 5.3872035);    
     private static          LatLonCoordinate    OLV_RD;
     
-    private final           LatLonCoordinate    TOPLEFT_WGS84       =new LatLonCoordinate(53.80, 3.10);
-    private final           LatLonCoordinate    BOTTOMRIGHT_WGS84   =new LatLonCoordinate(50.70, 7.30);
+    // Width in degrees, around map center
+    private final           double              MAPWIDTH            =4.2;
+    // Height in degrees, around map center
+    private final           double              MAPHEIGHT           =3.1;
+    private final           LatLonCoordinate    TOPLEFT_WGS84       =new LatLonCoordinate(OLV_WGS84.phi+MAPHEIGHT/2.0, OLV_WGS84.lambda-MAPWIDTH/2.0);
+    private final           LatLonCoordinate    BOTTOMRIGHT_WGS84   =new LatLonCoordinate(OLV_WGS84.phi-MAPHEIGHT/2.0, OLV_WGS84.lambda+MAPWIDTH/2.0);;
     private final           LatLonCoordinate    TOPLEFT_RD;
     private final           LatLonCoordinate    BOTTOMRIGHT_RD;
     
-    private final           int                 MARGIN              =25;
+    private final           int                 MARGIN              =40;
     
 
     private                 DatumCoordinate     topLeft;
     private                 DatumCoordinate     bottomRight;
+    private                 DatumCoordinate     center;
     private                 int                 topLeftX;
     private                 int                 topLeftY;
     private                 int                 bottomRightX;
@@ -237,6 +242,32 @@ public class MainView extends javax.swing.JFrame
     }
     
     /**
+     * Calculates the x coordinate on the screen based on the easting value.
+     * The OLV is used as center of the map.
+     * @param easting Easting in m
+     * @return The x coordinate in pixels, with reference to top left
+     */
+    private double fitX(double easting)
+    {
+        double x;
+        x=(bottomRightX-topLeftX)/2+MARGIN+((easting-center.easting)/meterPerPixelX+0.5);
+        return x;
+    }
+
+    /**
+     * Calculates the y coordinate on the map canvas based on the northing value
+     * The OLV is used as center of the map.
+     * @param northing Northing in m
+     * @return The y coordinate in pixels with reference to top left
+     */
+    private double fitY(double northing)
+    {
+        double y;
+        y=(bottomRightY-topLeftY)/2+MARGIN+((center.northing-northing)/meterPerPixelY+0.5);
+        return y;
+    }
+    
+    /**
      * Draws the outline map based on the WGS84 coordinates
      * @param g Graphics to use
      * @param projection Projection to use.
@@ -257,10 +288,10 @@ public class MainView extends javax.swing.JFrame
             {
                 c   =p.coordinates.get(i);
                 d   =projection.latLonToMapDatum(c);
-                x1  =topLeftX+((d.easting-topLeft.easting)/meterPerPixelX+0.5);
-                y1  =topLeftY+((topLeft.northing-d.northing)/meterPerPixelY+0.5);
-                x2  =topLeftX+((prevD.easting-topLeft.easting)/meterPerPixelX+0.5);
-                y2  =topLeftY+((topLeft.northing-prevD.northing)/meterPerPixelY+0.5);
+                x1  =fitX(d.easting);
+                y1  =fitY(d.northing);
+                x2  =fitX(prevD.easting);
+                y2  =fitY(prevD.northing);
                 g.drawLine((int)x1, (int)y1, (int)x2, (int)y2);
                 prevD=d;
             }
@@ -281,8 +312,8 @@ public class MainView extends javax.swing.JFrame
 
         
         dc=projection.latLonToMapDatum(llc);
-        x=topLeftX+(dc.easting -topLeft.easting )/meterPerPixelX+0.5; // Add 0.5 for proper rounding
-        y=topLeftY+(topLeft.northing-dc.northing)/meterPerPixelY+0.5;
+        x=fitX(dc.easting);
+        y=fitY(dc.northing);
         g.fillOval((int)x-5, (int)y-5, 10, 10);    
 
         System.out.println(String.format("%s E/N: %8.1f/%8.1f", name, dc.easting, dc.northing));
@@ -306,12 +337,14 @@ public class MainView extends javax.swing.JFrame
         if (type==DatumType.DATUMTYPE_RD)
         {
             topLeft     =projection.latLonToMapDatum(TOPLEFT_RD);
-            bottomRight =projection.latLonToMapDatum(BOTTOMRIGHT_RD);            
+            bottomRight =projection.latLonToMapDatum(BOTTOMRIGHT_RD);   
+            center      =projection.latLonToMapDatum(OLV_RD);
         }
         else
         {
             topLeft     =projection.latLonToMapDatum(TOPLEFT_WGS84);
             bottomRight =projection.latLonToMapDatum(BOTTOMRIGHT_WGS84);
+            center      =projection.latLonToMapDatum(OLV_WGS84);
         }
         meterPerPixelX  =(bottomRight.easting-topLeft.easting     )/(bottomRightX-topLeftX);
         meterPerPixelY  =(topLeft.northing   -bottomRight.northing)/(bottomRightY-topLeftY);
@@ -344,7 +377,9 @@ public class MainView extends javax.swing.JFrame
      * @param p2 2nd projection
      * @param type2 Datum type to use with projection 2
      */
-    private void compare(Graphics g, MapProjection p1, DatumType type1, MapProjection p2, DatumType type2, boolean fitProjections)
+    private void compare(Graphics g, MapProjection p1, DatumType type1, String name1,
+                                     MapProjection p2, DatumType type2, String name2,
+                                     boolean fitProjections)
     {
         List<PolygonLatLon> map1, map2;
         DatumCoordinate     dc1, dc2;               // Map datum of the center
@@ -399,6 +434,7 @@ public class MainView extends javax.swing.JFrame
         drawReferencePoint(g, p1, br1, "Bottom Right");
         drawReferencePoint(g, p1, new LatLonCoordinate(tl1.phi, br1.lambda), "Top Right   ");
         drawReferencePoint(g, p1, new LatLonCoordinate(br1.phi, tl1.lambda), "Bottom Left ");
+        g.drawString(name1, MARGIN, this.bottomRightY+MARGIN/2);
 
         if (fitProjections)
         {
@@ -414,6 +450,7 @@ public class MainView extends javax.swing.JFrame
         drawReferencePoint(g, p2, br2, "Bottom Right");
         drawReferencePoint(g, p2, new LatLonCoordinate(tl2.phi, br2.lambda), "Top Right   ");
         drawReferencePoint(g, p2, new LatLonCoordinate(br2.phi, tl2.lambda), "Bottom Left ");
+        g.drawString(name2, this.bottomRightX/2+MARGIN, this.bottomRightY+MARGIN/2);
         
         System.out.println("Distance OLV-Martini Projection 1:");
         report(dc1, dr1);
@@ -438,7 +475,9 @@ public class MainView extends javax.swing.JFrame
         System.out.println("Mercator vs Web Mercator");
         projection1           =new MercatorProjection(Ellipsoid.ELLIPSOID_WGS84, 5.3872035);
         projection2           =new WebMercatorProjection(5.3872035);
-        compare(g, projection1, DatumType.DATUMTYPE_WGS84, projection2, DatumType.DATUMTYPE_WGS84, fit);
+        compare(g, projection1, DatumType.DATUMTYPE_WGS84, "Mercator (WGS84)",
+                   projection2, DatumType.DATUMTYPE_WGS84, "Web Mercator (WGS84)",
+                   fit);
     }
 
     /**
@@ -452,7 +491,9 @@ public class MainView extends javax.swing.JFrame
         System.out.println("Mercator vs Transverse Mercator - fit");
         projection1           =new MercatorProjection(Ellipsoid.ELLIPSOID_WGS84, 5.3872035);
         projection2           =TransverseMercatorProjection.OZI_WGS84_TM;
-        compare(g, projection1, DatumType.DATUMTYPE_WGS84, projection2, DatumType.DATUMTYPE_WGS84, true);
+        compare(g, projection1, DatumType.DATUMTYPE_WGS84, "Mercator (WGS84)",
+                   projection2, DatumType.DATUMTYPE_WGS84, "Transverse Mercator (WGS84)",
+                   true);
     }
 
     /**
@@ -475,7 +516,9 @@ public class MainView extends javax.swing.JFrame
                                         0.9999079,
                                         52.1551722, 5.3872035, 
                                         0, 0);      
-        compare(g, projection1, DatumType.DATUMTYPE_WGS84, projection2, DatumType.DATUMTYPE_WGS84, false);
+        compare(g, projection1, DatumType.DATUMTYPE_WGS84, "Stereographic (WGS84)", 
+                   projection2, DatumType.DATUMTYPE_WGS84, "Transverse Mercator (WGS84)",
+                   false);
 
     }
 
@@ -493,7 +536,9 @@ public class MainView extends javax.swing.JFrame
                                                                0.9999079  ,
                                                                OLV_RD.phi, OLV_RD.lambda, 
                                                                463000.0, 155000.0);
-        compare(g, projection1, DatumType.DATUMTYPE_RD, projection2, DatumType.DATUMTYPE_RD, false);
+        compare(g, projection1, DatumType.DATUMTYPE_RD, "Stereographic (RD)",
+                   projection2, DatumType.DATUMTYPE_RD, "Transverse Mercator (RD)",
+                   false);
     }
 
     /**
@@ -507,7 +552,9 @@ public class MainView extends javax.swing.JFrame
         System.out.println("Stereographic RD vs Transverse Mercator WGS84");
         projection1          =StereographicProjection.RIJKSDRIEHOEKSMETING;
         projection2          =TransverseMercatorProjection.OZI_WGS84_TM;
-        compare(g, projection1, DatumType.DATUMTYPE_RD, projection2, DatumType.DATUMTYPE_WGS84, false);
+        compare(g, projection1, DatumType.DATUMTYPE_RD, "Stereographic (RD)",
+                   projection2, DatumType.DATUMTYPE_WGS84, "Transverse Mercator (WGS84)",
+                   false);
     }
     
     
