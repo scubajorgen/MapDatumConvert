@@ -436,7 +436,7 @@ public class MainView extends javax.swing.JFrame
         MapProjection   projection1, projection2;
         
         System.out.println("Mercator vs Web Mercator");
-        projection1           =new MercatorProjection(5.3872035);
+        projection1           =new MercatorProjection(Ellipsoid.ELLIPSOID_WGS84, 5.3872035);
         projection2           =new WebMercatorProjection(5.3872035);
         compare(g, projection1, DatumType.DATUMTYPE_WGS84, projection2, DatumType.DATUMTYPE_WGS84, fit);
     }
@@ -450,7 +450,7 @@ public class MainView extends javax.swing.JFrame
         MapProjection   projection1, projection2;
         
         System.out.println("Mercator vs Transverse Mercator - fit");
-        projection1           =new MercatorProjection(5.3872035);
+        projection1           =new MercatorProjection(Ellipsoid.ELLIPSOID_WGS84, 5.3872035);
         projection2           =TransverseMercatorProjection.OZI_WGS84_TM;
         compare(g, projection1, DatumType.DATUMTYPE_WGS84, projection2, DatumType.DATUMTYPE_WGS84, true);
     }

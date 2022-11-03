@@ -12,15 +12,20 @@ package net.studioblueplanet.mapdatumconvert;
  */
 public class MercatorProjection implements MapProjection
 {
-    private final Ellipsoid el          =Ellipsoid.ELLIPSOID_WGS84;
+    private final Ellipsoid el;
     private final double    lambda0;    
+    
+    // World Mercator ESPG:3395
+    public static final MercatorProjection WORLD_MERCATOR=new MercatorProjection(Ellipsoid.ELLIPSOID_WGS84, 0);
     
     /**
      * Constructor
+     * @param el Ellipsoid to use for the map datum
      * @param lambda0 Longitude of the origin (central meridian) in degrees
      */
-    public MercatorProjection(double lambda0)
+    public MercatorProjection(Ellipsoid el, double lambda0)
     {
+        this.el     =el;
         this.lambda0=lambda0;
     }
     
