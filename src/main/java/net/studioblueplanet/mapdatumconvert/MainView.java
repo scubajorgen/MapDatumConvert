@@ -49,11 +49,11 @@ public class MainView extends javax.swing.JFrame
                                                                      "outputformat=json&srsname=urn:ogc:def:crs:EPSG::4326";
     private static final    boolean             READ_FROM_PDOK      =true;
     
-    // Martinitoren
-    private static final    LatLonCoordinate    MARTINI_WGS84       =new LatLonCoordinate(53.2193683, 6.56827);
+    // Martinitoren: PDOK RD Info H.K. Martinitoren - Stang boven bol. - 2001 [233882.8635, 582065.2174]
+    private static final    LatLonCoordinate    MARTINI_WGS84       =new LatLonCoordinate(53.2193815, 6.5681938);
     private static          LatLonCoordinate    MARTINI_RD;
 
-    // OLV Amersfoort aka. center of the map
+    // OLV Amersfoort aka. center of the map [155000.0, 463000.0]
     private static final    LatLonCoordinate    OLV_WGS84           =new LatLonCoordinate(52.1551722, 5.3872035);    
     private static          LatLonCoordinate    OLV_RD;
     
@@ -316,7 +316,8 @@ public class MainView extends javax.swing.JFrame
         y=fitY(dc.northing);
         g.fillOval((int)x-5, (int)y-5, 10, 10);    
 
-        System.out.println(String.format("%s E/N: %8.1f/%8.1f", name, dc.easting, dc.northing));
+        System.out.println(String.format("%s E/N: %8.1f/%8.1f lambda/phi %10.7f/%10.7f", 
+                           name, dc.easting, dc.northing, llc.lambda, llc.phi));
         return dc;
     }
     

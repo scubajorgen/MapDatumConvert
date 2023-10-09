@@ -49,8 +49,6 @@ public class Main extends SingleFrameApplication
         System.out.println("_________________________________________________________________________________");
     }
     
-
-    
     public static void main(String args[])
     {
         launch(Main.class, args);

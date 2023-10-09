@@ -62,7 +62,7 @@ public class MapDatumConvertTest
         assertEquals(3924096.851, result.X, 0.001);
         assertEquals(301119.8207, result.Y, 0.001);
         assertEquals(5001429.896, result.Z, 0.001);
-        System.out.println(String.format("[%8.6f, %8.6f, %5.3f] to [%10.3f, %10.3f, %10.3f]",
+        System.out.println(String.format("[%8.7f, %8.7f, %5.3f] to [%10.3f, %10.3f, %10.3f]",
                            latlon.phi, latlon.lambda, latlon.h,
                            result.X, result.Y, result.Z));
     }    
@@ -128,7 +128,7 @@ public class MapDatumConvertTest
         assertEquals(51.98608734, result.phi    , 0.0000001);
         assertEquals(4.387764738, result.lambda , 0.0000001);
         assertEquals(74.31246664, result.h      , 0.001);        
-        System.out.println(String.format("[%10.3f, %10.3f, %10.3f] to [%8.6f, %8.6f, %5.3f]",
+        System.out.println(String.format("[%10.3f, %10.3f, %10.3f] to [%8.7f, %8.7f, %5.3f]",
                            rd.X, rd.Y, rd.Z,
                            result.phi, result.lambda, result.h));    }
     
@@ -151,7 +151,7 @@ public class MapDatumConvertTest
         assertEquals(51.98608734    , result.phi    , 0.0000001);
         assertEquals( 4.387764732   , result.lambda , 0.0000001);
         assertEquals(74.312         , result.h      , 0.001);
-        System.out.println(String.format("[%8.3f, %8.3f, %5.3f] to [%8.6f, %8.6f, %5.3f]",
+        System.out.println(String.format("[%8.3f, %8.3f, %5.3f] to [%8.7f, %8.7f, %5.3f]",
                            rd.easting, rd.northing, rd.h,
                            result.phi, result.lambda, result.h));
         
@@ -163,13 +163,14 @@ public class MapDatumConvertTest
         assertEquals(52.1551722  , result.phi    , 0.0000001);
         assertEquals( 5.3872035  , result.lambda , 0.0000001);
         assertEquals(43.2345     , result.h      , 0.001);        
-        System.out.println(String.format("[%8.3f, %8.3f, %5.3f] to [%8.6f, %8.6f, %5.3f]",
+        System.out.println(String.format("[%8.3f, %8.3f, %5.3f] to [%8.7f, %8.7f, %5.3f]",
                            rd.easting, rd.northing, rd.h,
                            result.phi, result.lambda, result.h));
         
         
         // Rijksdriehoeksmeting reference point Steen RD Westerpad Ameland
         // Compared to coordinate conversion https://epsg.io/transform#s_srs=28992&t_srs=4326&x=179640.6536000&y=607984.4519000
+        // Results in: 53.4575106° 5.7581475°
         rd.easting  =179640.6536;
         rd.northing =607984.4519;
         rd.h        =0.0;
@@ -177,7 +178,7 @@ public class MapDatumConvertTest
         assertEquals(53.4575106, result.phi    , 0.0000001);
         assertEquals( 5.7581475, result.lambda , 0.0000001);
         assertEquals(40.7992                   , result.h      , 0.001);        
-        System.out.println(String.format("[%8.3f, %8.3f, %5.3f] to [%8.6f, %8.6f, %5.3f]",
+        System.out.println(String.format("[%8.3f, %8.3f, %5.3f] to [%8.7f, %8.7f, %5.3f]",
                            rd.easting, rd.northing, rd.h,
                            result.phi, result.lambda, result.h));
         
@@ -209,7 +210,7 @@ public class MapDatumConvertTest
         assertEquals(86346.784 , result.easting     , 0.001);
         assertEquals(444659.972 , result.northing   , 0.001);
         assertEquals(30.809     , result.h          , 0.001);
-        System.out.println(String.format("[%8.6f, %8.6f, %5.3f] to [%8.3f, %8.3f, %5.3f]",
+        System.out.println(String.format("[%8.7f, %8.7f, %5.3f] to [%8.3f, %8.3f, %5.3f]",
                            wgs.phi, wgs.lambda, wgs.h,
                            result.easting, result.northing, result.h));
 
@@ -220,9 +221,23 @@ public class MapDatumConvertTest
         assertEquals(155000.000 , result.easting    , 0.01);
         assertEquals(463000.000 , result.northing   , 0.01);
         assertEquals(0.000      , result.h          , 0.01);
-        System.out.println(String.format("[%8.6f, %8.6f, %5.3f] to [%8.3f, %8.3f, %5.3f]",
+        System.out.println(String.format("[%8.7f, %8.7f, %5.3f] to [%8.3f, %8.3f, %5.3f]",
                            wgs.phi, wgs.lambda, wgs.h,
                            result.easting, result.northing, result.h));
+        
+        // Rijksdriehoeksmeting reference point Steen RD Westerpad Ameland
+        // Compared to coordinate conversion https://epsg.io/transform#s_srs=4326&t_srs=28992&x=5.7581475&y=53.4575106
+        // Results in: 179640.653, 607984.450
+        wgs.phi                     =53.4575105;
+        wgs.lambda                  =5.7581475;
+        wgs.h                       =40.7992;
+        result                      = instance.wgs84ToRd(wgs);
+        assertEquals(179640.653 , result.easting    , 0.01);
+        assertEquals(607984.450 , result.northing   , 0.01);
+        assertEquals(0.000       , result.h          , 0.01);
+        System.out.println(String.format("[%8.7f, %8.7f, %5.3f] to [%8.3f, %8.3f, %5.3f]",
+                           wgs.phi, wgs.lambda, wgs.h,
+                           result.easting, result.northing, result.h));       
     }
     
     /**
@@ -252,7 +267,7 @@ public class MapDatumConvertTest
         assertEquals( wgs.phi   , result.phi    , 0.0000001);
         assertEquals(wgs.lambda , result.lambda , 0.0000001);
         assertEquals(wgs.h      , result.h      , 0.001);    
-        System.out.println(String.format("[%8.6f, %8.6f, %5.3f] to [%8.6f, %8.6f, %5.3f]",
+        System.out.println(String.format("[%8.7f, %8.7f, %5.3f] to [%8.7f, %8.7f, %5.3f]",
                            wgs.phi, wgs.lambda, wgs.h,
                            result.phi, result.lambda, result.h));
         
