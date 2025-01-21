@@ -177,7 +177,7 @@ public class MapDatumConvertTest
         result = instance.rdToWgs84(rd);
         assertEquals(53.4575106, result.phi    , 0.0000001);
         assertEquals( 5.7581475, result.lambda , 0.0000001);
-        assertEquals(40.7992                   , result.h      , 0.001);        
+        assertEquals(40.7992   , result.h      , 0.001);        
         System.out.println(String.format("[%8.3f, %8.3f, %5.3f] to [%8.7f, %8.7f, %5.3f]",
                            rd.easting, rd.northing, rd.h,
                            result.phi, result.lambda, result.h));
@@ -270,6 +270,5 @@ public class MapDatumConvertTest
         System.out.println(String.format("[%8.7f, %8.7f, %5.3f] to [%8.7f, %8.7f, %5.3f]",
                            wgs.phi, wgs.lambda, wgs.h,
                            result.phi, result.lambda, result.h));
-        
     }
 }

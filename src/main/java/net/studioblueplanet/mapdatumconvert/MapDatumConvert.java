@@ -62,7 +62,7 @@ public class MapDatumConvert
     
     /**
      * Executes the datum transform of carthesian coordinates. It is a 3D
-     * similarity transform consisting of ratation, translation and scaling.
+     * similarity transform consisting of rOtation, translation and scaling.
      * @param in Input coordinate
      * @param p  Transform parameters
      * @return The coordinate in against the new coordinate axes
@@ -173,13 +173,10 @@ public class MapDatumConvert
      */
     public LatLonCoordinate rdLatLonToWgs84(LatLonCoordinate rd)
     {
-        LatLonCoordinate        rdLatLon;
         CarthesianCoordinate    rdCarthesian;
         CarthesianCoordinate    wgs84Carthesian;
         LatLonCoordinate        wgs84LatLon;
-        StereographicProjection p;
-        
-        p               =StereographicProjection.RIJKSDRIEHOEKSMETING;
+
         rdCarthesian    =this.latLonToCarthesian(rd, Ellipsoid.ELLIPSOID_BESSEL1841);
         wgs84Carthesian =this.datumTransformRdToWgs84(rdCarthesian);
         wgs84LatLon     =this.carthesianToLatLon(wgs84Carthesian, Ellipsoid.ELLIPSOID_WGS84);
@@ -222,14 +219,10 @@ public class MapDatumConvert
         LatLonCoordinate        rdLatLon;
         CarthesianCoordinate    rdCarthesian;
         CarthesianCoordinate    wgs84Carthesian;
-        LatLonCoordinate        wgs84LatLon;
-        StereographicProjection p;
-        
-        p               =StereographicProjection.RIJKSDRIEHOEKSMETING;
+
         wgs84Carthesian =latLonToCarthesian(wgs, Ellipsoid.ELLIPSOID_WGS84);
         rdCarthesian    =datumTransformWgs84ToRd(wgs84Carthesian);
         rdLatLon        =carthesianToLatLon(rdCarthesian, Ellipsoid.ELLIPSOID_BESSEL1841);
-        
         return rdLatLon;
     }
 
@@ -246,7 +239,6 @@ public class MapDatumConvert
         LatLonCoordinate        rdLatLon;
         CarthesianCoordinate    rdCarthesian;
         CarthesianCoordinate    wgs84Carthesian;
-        LatLonCoordinate        wgs84LatLon;
         StereographicProjection p;
         
         p               =StereographicProjection.RIJKSDRIEHOEKSMETING;
